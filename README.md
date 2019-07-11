@@ -18,6 +18,7 @@ How to compile:
     Required both [CUDA >= 8.0](https://developer.nvidia.com/cuda-toolkit-archive) and [cuDNN >= 7.1.1](https://developer.nvidia.com/rdp/cudnn-archive)
 
 How to start:
+* Download [`yolov3.weights`](https://pjreddie.com/media/files/yolov3.weights) to the `bin` directory
 * Download [google open image set](https://github.com/cvdfoundation/open-images-dataset#download-full-dataset-with-google-storage-transfer) to the `bin\testPics` directory 
 * Enter the `bin` directory and run `./gold_digger {random_seed}`
 
