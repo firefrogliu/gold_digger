@@ -40,8 +40,14 @@ ARCH= -gencode arch=compute_30,code=sm_30 \
 
 VPATH=./src/
 EXEC=./bin/gold_digger
+SHARED=./bin/shared/libgold_digger.so
+STATIC_PATH=./bin/static/
+STATIC=./bin/static/libgold_digger.a
+STATIC_LINK=gold_digger
 OBJDIR=./obj/
 
+AR=ar
+ARFLAG=rcs
 CC=gcc
 CPP=g++
 NVCC=/usr/local/cuda/bin/nvcc 
@@ -88,20 +94,31 @@ CFLAGS+= -DCUDNN -I/usr/local/cudnn/include
 LDFLAGS+= -L/usr/local/cudnn/lib64 -lcudnn
 endif
 
-OBJ=main.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o print_sth.o join_pics.o Sha256.o
+MAIN_OBJ=main.o
+OBJ=main.o join_pic_detect.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o print_sth.o join_pics.o Sha256.o
+STATIC_LINK_OBJ=join_pic_detect.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o print_sth.o join_pics.o Sha256.o
 LDFLAGS+= -lstdc++ 
 ifeq ($(GPU), 1) 
 OBJ+=gpu.o yolov2_forward_network_gpu.o 
 endif
 
 OBJS = $(addprefix $(OBJDIR), $(OBJ))
+STATIC_LINK_OBJS=$(addprefix $(OBJDIR), $(STATIC_LINK_OBJ))
 DEPS = $(wildcard src/*.h) Makefile
 
-all: obj bash results $(EXEC)
+all: obj bash results  $(STATIC) $(EXEC)
 
-$(EXEC): $(OBJS)
-	$(CC) $(COMMON) $(CFLAGS) $^ -o $@ $(LDFLAGS)
-	
+# $(EXEC): $(OBJS)
+# 	$(CC) $(COMMON) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+
+$(EXEC): $(MAIN_OBJ)
+	$(CC) $^ -L$(STATIC_PATH) -l$(STATIC_LINK) -o $@ $(LDFLAGS) 
+
+$(STATIC): $(OBJS)
+	$(AR) $(ARFLAG) $@ $^
+
+$(SHARED): $(OBJS)
+	$(CC) -shared $(CFLAGS) $^ -o $@ 	
 
 $(OBJDIR)%.o: %.c $(DEPS)
 	$(CC) $(COMMON) $(CFLAGS) -c $< -o $@
