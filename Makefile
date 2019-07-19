@@ -1,4 +1,4 @@
-GPU=1
+GPU=0
 OPENCV=0
 OPENMP=0
 AVX=0
@@ -95,14 +95,16 @@ LDFLAGS+= -L/usr/local/cudnn/lib64 -lcudnn
 endif
 
 MAIN_OBJ=main.o
-OBJ=main.o join_pic_detect.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o print_sth.o join_pics.o Sha256.o
-STATIC_LINK_OBJ=join_pic_detect.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o print_sth.o join_pics.o Sha256.o
+OBJ=main.o join_pic_detect.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o print_sth.o join_pics.o Sha256.o digger_interface.o
+STATIC_LINK_OBJ=join_pic_detect.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o print_sth.o join_pics.o Sha256.o digger_interface.o
 LDFLAGS+= -lstdc++ 
 ifeq ($(GPU), 1) 
 OBJ+=gpu.o yolov2_forward_network_gpu.o 
+STATIC_LINK_OBJ+=gpu.o yolov2_forward_network_gpu.o
 endif
 
 OBJS = $(addprefix $(OBJDIR), $(OBJ))
+MAIN_OBJ_ABSPATH=$(addprefix $(OBJDIR), $(MAIN_OBJ))
 STATIC_LINK_OBJS=$(addprefix $(OBJDIR), $(STATIC_LINK_OBJ))
 DEPS = $(wildcard src/*.h) Makefile
 
@@ -111,10 +113,10 @@ all: obj bash results  $(STATIC) $(EXEC)
 # $(EXEC): $(OBJS)
 # 	$(CC) $(COMMON) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
-$(EXEC): $(MAIN_OBJ)
-	$(CC) $^ -L$(STATIC_PATH) -l$(STATIC_LINK) -o $@ $(LDFLAGS) 
+$(EXEC): $(OBJS)
+	$(CC) $(MAIN_OBJ_ABSPATH) -L$(STATIC_PATH) -l$(STATIC_LINK) -o $@ $(LDFLAGS) 
 
-$(STATIC): $(OBJS)
+$(STATIC): $(STATIC_LINK_OBJS)
 	$(AR) $(ARFLAG) $@ $^
 
 $(SHARED): $(OBJS)
@@ -139,5 +141,5 @@ results:
 .PHONY: clean
 
 clean:
-	rm -rf $(OBJS) $(EXEC)
+	rm -rf $(OBJS) $(EXEC) $(SHARED) $(STATIC)
 

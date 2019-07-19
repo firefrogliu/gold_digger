@@ -112,42 +112,42 @@ void report_detection(image im, detection *dets, int num, float thresh, char **n
 
     // text output and save results in result_512bits;
     qsort(selected_detections, selected_detections_num, sizeof(*selected_detections), compare_by_probs);
-    int i;
     int result_memcpy_ptr = 0; 
+    int i;
     memset(result_512bits,0,64);
+    
     for (i = 0; i < selected_detections_num && i < 4; ++i) {
         const int best_class = selected_detections[i].best_class;
-        //printf("%s: %.0f%%", names[best_class], selected_detections[i].det.prob[best_class] * 100);
-        printf("%s: %f\n", names[best_class], selected_detections[i].det.prob[best_class]);
+        printf("%s: %.0f%%", names[best_class], selected_detections[i].det.prob[best_class] * 100);
 
         //set result 512 bits
         if(result_memcpy_ptr + sizeof(names[best_class]) < 64){
             memcpy(result_512bits + result_memcpy_ptr, names[best_class], strlen(names[best_class]));            
             result_memcpy_ptr += strlen(names[best_class]);
-            printf("now result_memcpy_ptr is %d\n", result_memcpy_ptr);
 
         }
+        //for the sake of getting same result on both CPU and GPU, convert the probability from float into int
+        //the first 4 digits of float are preserved
         if(result_memcpy_ptr + sizeof(float) < 64){
-            memcpy(result_512bits + result_memcpy_ptr, &(selected_detections[i].det.prob[best_class]), sizeof(float));
-            result_memcpy_ptr += sizeof(float);
-            print_bytes(&(selected_detections[i].det.prob[best_class]), sizeof(float), "prob");
-            printf("now result_memcpy_ptr is %d\n", result_memcpy_ptr);
+            int prob_int = (selected_detections[i].det.prob[best_class]) * 10000;
+            memcpy(result_512bits + result_memcpy_ptr, &(prob_int), sizeof(int));
+            result_memcpy_ptr += sizeof(int);
         }
 
-        if (ext_output)
-            printf("\t(left_x: %4.0f   top_y: %4.0f   width: %4.0f   height: %4.0f)\n",
-                round((selected_detections[i].det.bbox.x - selected_detections[i].det.bbox.w / 2)*im.w),
-                round((selected_detections[i].det.bbox.y - selected_detections[i].det.bbox.h / 2)*im.h),
-                round(selected_detections[i].det.bbox.w*im.w), round(selected_detections[i].det.bbox.h*im.h));
-        else
-            printf("\n");
-        int j;
-        for (j = 0; j < classes; ++j) {
-            if (selected_detections[i].det.prob[j] > thresh && j != best_class) {
-                //printf("%s: %.0f%%\n", names[j], selected_detections[i].det.prob[j] * 100);
-                printf("%s: %f\n", names[j], selected_detections[i].det.prob[j]);
-            }
-        }
+        // if (ext_output)
+        //     printf("\t(left_x: %4.0f   top_y: %4.0f   width: %4.0f   height: %4.0f)\n",
+        //         round((selected_detections[i].det.bbox.x - selected_detections[i].det.bbox.w / 2)*im.w),
+        //         round((selected_detections[i].det.bbox.y - selected_detections[i].det.bbox.h / 2)*im.h),
+        //         round(selected_detections[i].det.bbox.w*im.w), round(selected_detections[i].det.bbox.h*im.h));
+        //else
+            // printf("\n");
+        // int j;
+        // for (j = 0; j < classes; ++j) {
+        //     if (selected_detections[i].det.prob[j] > thresh && j != best_class) {
+        //         printf("%s: %.0f%%\n", names[j], selected_detections[i].det.prob[j] * 100);
+        //         printf("%s: %f\n", names[j], selected_detections[i].det.prob[j]);
+        //     }
+        // }
 
         
     }
@@ -375,6 +375,109 @@ void test_detector_cpu_folder(char **names, char *cfgfile, char *weightfile, cha
 
 }
 
+void* initNetwork(char *cfgfile,char *weightfile){
+    printf("loading network\n");
+    int quantized = 0;
+    network *net = malloc(sizeof(network));
+    *net =  parse_network_cfg(cfgfile, 1, quantized);    
+    if (weightfile) {
+        load_weights_upto_cpu(net, weightfile, net->n);    // parser.c
+    }
+    printf("loading network done\n");
+    return (void*)net;
+}
+
+
+void test_detector_cpu_networkloaded(char **names, char *filename, float thresh, int quantized, int dont_show, void* net_ptr, unsigned char* result_512bits)
+{
+    network net = *(network *) net_ptr;
+    //set_batch_network(&net, 1);                    // network.c
+    srand(2222222);
+    yolov2_fuse_conv_batchnorm(net);
+    calculate_binary_weights(net);
+    if (quantized) {
+        printf("\n\n Quantinization! \n\n");
+        quantinization_and_get_multipliers(net);
+    }
+    clock_t time;
+    char buff[256];
+    char *input = buff;
+    int j;
+    float nms = .4;
+    while (1) {
+        if (filename) {
+            strncpy(input, filename, 256);
+        }
+        else {
+            printf("Enter Image Path: ");
+            fflush(stdout);
+            input = fgets(input, 256, stdin);
+            if (!input) return;
+            strtok(input, "\n");
+        }
+        image im = load_image(input, 0, 0, 3);            // image.c
+        image sized = resize_image(im, net.w, net.h);    // image.c
+        layer l = net.layers[net.n - 1];
+
+        box *boxes = calloc(l.w*l.h*l.n, sizeof(box));
+        float **probs = calloc(l.w*l.h*l.n, sizeof(float *));
+        for (j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(l.classes, sizeof(float *));
+
+        float *X = sized.data;        time = clock();
+        //network_predict_quantized(net, X);
+        
+#ifdef GPU
+        if (quantized) {
+            network_predict_gpu_cudnn_quantized(net, X);    // quantized
+                                                            //nms = 0.2;
+        }
+        else {
+            network_predict_gpu_cudnn(net, X);
+        }
+#else
+#ifdef OPENCL
+        network_predict_opencl(net, X);
+#else
+        if (quantized) {
+            network_predict_quantized(net, X);    // quantized
+            nms = 0.2;
+        }
+        else {
+            network_predict_cpu(net, X);
+        }
+#endif
+#endif
+        //printf("%s: Predicted in %f seconds.\n", input, (float)(clock() - time) / CLOCKS_PER_SEC); //sec(clock() - time));
+        //get_region_boxes_cpu(l, 1, 1, thresh, probs, boxes, 0, 0);            // get_region_boxes(): region_layer.c
+
+        // nms (non maximum suppression) - if (IoU(box[i], box[j]) > nms) then remove one of two boxes with lower probability
+        //if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);    // box.c
+        //draw_detections_cpu(im, l.w*l.h*l.n, thresh, boxes, probs, names, alphabet, l.classes);    // draw_detections(): image.c
+        float hier_thresh = 0.5;
+        int ext_output = 1, letterbox = 0, nboxes = 0;
+        detection *dets = get_network_boxes(&net, im.w, im.h, thresh, hier_thresh, 0, 1, &nboxes, letterbox);
+        if (nms) {
+            do_nms_sort(dets, nboxes, l.classes, nms);
+        }
+
+        report_detection(im, dets, nboxes, thresh, names, l.classes, ext_output, result_512bits);
+        //save_image_png(im, "predictions");    // image.c
+        if (!dont_show) {
+            show_image(im, "predictions");    // image.c
+        }
+
+        free_image(im);                    // image.c
+        free_image(sized);                // image.c
+        free(boxes);
+        free_ptrs((void **)probs, l.w*l.h*l.n);    // utils.c
+#ifdef OPENCV
+        cvWaitKey(0);
+        cvDestroyAllWindows();
+#endif
+        if (filename) break;
+    }
+}
+
 void test_detector_cpu(char **names, char *cfgfile, char *weightfile, char *filename, float thresh, int quantized, int dont_show, unsigned char* result_512bits)
 {
     //image **alphabet = load_alphabet();            // image.c
@@ -383,6 +486,7 @@ void test_detector_cpu(char **names, char *cfgfile, char *weightfile, char *file
     if (weightfile) {
         load_weights_upto_cpu(&net, weightfile, net.n);    // parser.c
     }
+    
     //set_batch_network(&net, 1);                    // network.c
     srand(2222222);
     yolov2_fuse_conv_batchnorm(net);
@@ -870,7 +974,7 @@ void run_detector(int argc, char **argv)
     free(names);
 }
 
-void run_test_detector(char* filename,char* obj_names, char* cfg, char* weights, int dont_show, float thresh, unsigned char* result_512bits){
+void run_test_detector(char* filename,char* obj_names, char* cfg, char* weights, int dont_show, float thresh, unsigned char* result_512bits, void* net_ptr){
     
     int clear = 0;                // find_arg(argc, argv, "-clear");
     int quantized = 0;
@@ -895,7 +999,7 @@ void run_test_detector(char* filename,char* obj_names, char* cfg, char* weights,
     struct dirent *dp;
     DIR *dir = opendir(input);
     if(!dir)
-        test_detector_cpu(names, cfg, weights, filename, thresh, quantized, dont_show, result_512bits);
+        test_detector_cpu_networkloaded(names,  filename, thresh, quantized, dont_show, net_ptr, result_512bits);
     else 
         test_detector_cpu_folder(names, cfg, weights, filename, thresh, quantized, dont_show);
  
@@ -903,36 +1007,38 @@ void run_test_detector(char* filename,char* obj_names, char* cfg, char* weights,
 
 
 
-int lib_main(int argc, char **argv)
-{
-    if(argc < 2){
-        fprintf(stderr, "usage: %s <function>, rand_seed\n", argv[0]);
-        return 0;
-    }
+int join_pic_detect(int rand_seed, const char** picNames,unsigned char* result, void* network_ptr){
 
-    int rand_seed = strtol(argv[1], NULL, 10);    
-    int join_succeed = join_pics(rand_seed, PIC_SIZE_X,PIC_SIZE_Y, DIVIDE_X, DIVIDE_Y, PICS_PATH, JOIN_PIC_NAME);
-    
+    //int join_succeed = join_pics(rand_seed, PIC_SIZE_X,PIC_SIZE_Y, DIVIDE_X, DIVIDE_Y, PICS_PATH, JOIN_PIC_NAME);
+    int join_succeed =  join_16_pics(rand_seed,picNames, PIC_SIZE_X,PIC_SIZE_Y, JOIN_PIC_NAME);
 
     int dont_show = 1;
     float thresh = 0.24;
     unsigned char result_512bits[64];
     unsigned char hash_result[32];
 
+    
     if(join_succeed){
-        run_test_detector(JOIN_PIC_NAME, NAMES,  "yolov3.cfg", WEIGHTS_FILE, dont_show, thresh, result_512bits);
-        print_bytes(result_512bits, 64, "result_512bits");
+        //printf("join succeeded\n");
+        //void* net_ptr =  initNetwork(CFG,WEIGHTS_FILE);
+        
+
+        run_test_detector(JOIN_PIC_NAME, NAMES, CFG, WEIGHTS_FILE, dont_show, thresh, result_512bits, network_ptr);
+
         CSha256 Csha;
         Sha256_Init(&Csha);
         Sha256_Update(&Csha, result_512bits, 64);
         Sha256_Final(&Csha, hash_result);
-        print_bytes(hash_result, 32, "hash_result");
+        //print_bytes(hash_result, 32, "hash_result");
+        //printf("sizeof result is %d\n", sizeof(result));
+        memcpy(result, hash_result, 32);   
+        //print_bytes(result, 32, "result to return");
+        return 1;
     }
     else
     {
         printf("join picture failed\n");
-
-    }
+        return 0;
+    }    
     
-    return 0;
 }

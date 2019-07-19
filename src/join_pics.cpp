@@ -171,9 +171,45 @@ CImg<unsigned char> rand_join_pics(int dest_size_x, int dest_size_y, int divide_
 extern "C"
 {
 #endif
+#define PICS_PATH ""
+int join_16_pics(int rand_seed, const char** picNames,int join_pic_sizex, int join_pic_sizey, const char* join_pic_name){
+    srand(rand_seed);
+    try{
+        CImg<unsigned char> dest(join_pic_sizex,join_pic_sizey,3,3);
+        std::vector<std::tuple<int,int,int,int>> anker_points = cal_anker_points(join_pic_sizex,join_pic_sizey,4,4);
+        int pic_id = 0;
+        char buff[256];    
+        const char* path = PICS_PATH;
+        for(auto anker_point:anker_points){
+            char* absFilename = buff;
+            strcpy(absFilename,path);  
+            const char* picName_chars = picNames[pic_id];
+            strcat(absFilename,picName_chars); 
+            CImg<unsigned char> source; 
+            source.load_jpeg(absFilename);
+            //source.display("emmm");
+            int 
+                anker_x = std::get<0>(anker_point),
+                anker_y = std::get<1>(anker_point),
+                crop_x = std::get<2>(anker_point),
+                crop_y = std::get<3>(anker_point);
+
+            //std::cout<<"anker_x "<<anker_x<<" anker_y "<<anker_y<<" size_x "<<crop_x<<" crop_y "<<crop_y<<std::endl;
+
+            CImg<unsigned char> crop = get_rand_crop(source,crop_x,crop_y);
+            //crop.display("crop");
+            fill_image_with_image(dest,crop,anker_x,anker_y);
+            pic_id++;
+        }
+        dest.save(join_pic_name);
+        return 1;
+    }
+    catch(...){
+        return 0;
+    }
+}
 
 int join_pics(int rand_seed, int width,int height,int divide_x,int divide_y,const char* pics_path, const char* join_pic_name){ 
-
 
     srand(rand_seed);
     auto begin = std::chrono::high_resolution_clock::now();

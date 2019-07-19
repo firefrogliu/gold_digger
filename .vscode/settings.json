@@ -46,6 +46,9 @@
         "type_traits": "cpp",
         "typeinfo": "cpp",
         "utility": "cpp",
-        "rotatedefs.h": "c"
+        "rotatedefs.h": "c",
+        "unistd.h": "c",
+        "interface.h": "c",
+        "stdio.h": "c"
     }
 }
