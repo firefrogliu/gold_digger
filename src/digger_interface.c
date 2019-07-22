@@ -22,9 +22,7 @@ struct thread_stats{
     int finished;
     int read;
     int canceled;
-    pthread_cond_t cond; 
-    pthread_mutex_t lock;
-    
+    pthread_cond_t cond;     
 };
 
 struct thread_stats THREADS_STATS[MAX_THREAD_NUM];
@@ -77,7 +75,6 @@ void* thread_func(void* _args){
             sts->read = 0;
             sts->canceled = 0;
             sts->cond = (pthread_cond_t)PTHREAD_COND_INITIALIZER; 
-            sts->lock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER; 
             break;            
         }
     }
