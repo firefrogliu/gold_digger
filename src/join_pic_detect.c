@@ -1,5 +1,5 @@
 #include "join_pic_detect.h"
-
+#define _OPEN_SYS_ITOA_EXT
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,7 +31,7 @@
 #endif
 
 #define PICS_PATH "./testPics/"
-#define JOIN_PIC_NAME "join.jpg"
+#define JOIN_PIC_NAME_APPENDIX "join.jpg"
 #define NAMES "coco.names"
 #define CFG "yolov3.cfg"
 #define WEIGHTS_FILE "yolov3.weights"
@@ -1007,10 +1007,17 @@ void run_test_detector(char* filename,char* obj_names, char* cfg, char* weights,
 
 
 
-int join_pic_detect(int rand_seed, const char** picNames,unsigned char* result, void* network_ptr){
-
+int join_pic_detect(int rand_seed, const char** picNames,unsigned char* result, void* network_ptr, unsigned long thread){
+    printf("rand seed in join_pic_detect is %d\n", rand_seed);
     //int join_succeed = join_pics(rand_seed, PIC_SIZE_X,PIC_SIZE_Y, DIVIDE_X, DIVIDE_Y, PICS_PATH, JOIN_PIC_NAME);
-    int join_succeed =  join_16_pics(rand_seed,picNames, PIC_SIZE_X,PIC_SIZE_Y, JOIN_PIC_NAME);
+    char joinPicName[256];    
+    char buffer[sizeof(unsigned long)*8+1];
+    const char* appendix = JOIN_PIC_NAME_APPENDIX;
+    sprintf(buffer, "%lu", thread);  
+    strcpy(joinPicName,buffer);  
+    strcat(joinPicName,appendix); 
+    printf("join pic name is %s\n", joinPicName);
+    int join_succeed =  join_16_pics(rand_seed,picNames, PIC_SIZE_X,PIC_SIZE_Y, joinPicName);
 
     int dont_show = 1;
     float thresh = 0.24;
@@ -1023,8 +1030,8 @@ int join_pic_detect(int rand_seed, const char** picNames,unsigned char* result, 
         //void* net_ptr =  initNetwork(CFG,WEIGHTS_FILE);
         
 
-        run_test_detector(JOIN_PIC_NAME, NAMES, CFG, WEIGHTS_FILE, dont_show, thresh, result_512bits, network_ptr);
-
+        run_test_detector(joinPicName, NAMES, CFG, WEIGHTS_FILE, dont_show, thresh, result_512bits, network_ptr);
+        remove(joinPicName);
         CSha256 Csha;
         Sha256_Init(&Csha);
         Sha256_Update(&Csha, result_512bits, 64);

@@ -185,6 +185,7 @@ int join_16_pics(int rand_seed, const char** picNames,int join_pic_sizex, int jo
             strcpy(absFilename,path);  
             const char* picName_chars = picNames[pic_id];
             strcat(absFilename,picName_chars); 
+            printf("pic name is %s\n", absFilename);
             CImg<unsigned char> source; 
             source.load_jpeg(absFilename);
             //source.display("emmm");

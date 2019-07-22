@@ -4,6 +4,10 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#define CFG "yolov3.cfg"
+#define WEIGHTS_FILE "yolov3.weights"
+#define MAX_THREAD_NUM 10
+
 struct thread_args {
     int rand_seed;
     unsigned char* result;
@@ -12,14 +16,21 @@ struct thread_args {
 };
 
 
-#define CFG "yolov3.cfg"
-#define WEIGHTS_FILE "yolov3.weights"
+struct thread_stats{
+    pthread_t thread;
+    int started;
+    int finished;
+    int read;
+    int canceled;
+    pthread_cond_t cond; 
+    pthread_mutex_t lock;
+    
+};
 
-int thread_finished = 0;
-int thread_been_read  = 0;
+struct thread_stats THREADS_STATS[MAX_THREAD_NUM];
 
-// Declaration of thread condition variable 
-pthread_cond_t cond1 = PTHREAD_COND_INITIALIZER; 
+// // Declaration of thread condition variable 
+// pthread_cond_t cond1 = PTHREAD_COND_INITIALIZER; 
   
 // declaring mutex 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER; 
@@ -29,26 +40,63 @@ void* init_yolov3_data(){
     return net;
 }
 
+void enter_to_continue(){
+    printf("Press enter to continue\n");
+    char enter = 0;
+    while (enter != '\r' && enter != '\n') { enter = getchar(); }
+    printf("Thank you for pressing enter\n");
+}
+
+struct thread_stats * find_thread_stats(pthread_t thread){
+    for(int i = 0; i < MAX_THREAD_NUM; i++){
+        struct thread_stats* sts = &THREADS_STATS[i];
+        if(sts->thread == thread)
+            return sts;
+    }
+    return NULL;   
+}
+
 void* thread_func(void* _args){
-    thread_finished = 0;
-    pthread_mutex_lock(&lock); 
+    /* set thread cancel type to asynchronous to make thread quit as soon as possible */
+    int rc = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+    printf("pthread_setcanceltype() %lu\n", rc);
+
+    pthread_t  self;
+    self = pthread_self();
+    printf("creating thread %lu\n", self);
+
+    /* set thread status */ 
+    struct thread_stats* sts = NULL;
+    for(int i = 0; i < MAX_THREAD_NUM; i++){
+        sts = &THREADS_STATS[i];
+        if((!sts->started) || (sts->read) || (sts->canceled)){
+            printf("set thread %lu stats\n", self);
+            sts->thread = self;
+            sts->started = 1;
+            sts->finished = 0;
+            sts->read = 0;
+            sts->canceled = 0;
+            sts->cond = (pthread_cond_t)PTHREAD_COND_INITIALIZER; 
+            sts->lock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER; 
+            break;            
+        }
+    }
+
+    if(sts == NULL){
+        printf("cannot creat new thread, thread pool full\n");
+        return;
+    }
     struct thread_args *args = (struct thread_args *) _args;
-    int rand_seed =  args->rand_seed;        
-    //printf("rand_seed in thread is %d\n", rand_seed);    
-    unsigned char* result = args->result; 
-    
+    int rand_seed =  args->rand_seed;            
+    unsigned char* result = args->result;     
     void* network_ptr = args->network_ptr;
     const char* picNames = args->picNames;
-    int succeed  = join_pic_detect(rand_seed, picNames, result, network_ptr);
-    printf("\n");
-    thread_finished = 1;
-    //printf("Waiting on condition variable cond1\n"); 
-    pthread_cond_wait(&cond1, &lock); 
-    //print_bytes(result, 32, "result in thread");
-    pthread_mutex_unlock(&lock); 
-    //printf("thread quiting\n");
-    //printf("arg result p %p\n",result);
     free(_args);
+    pthread_mutex_lock(&lock); 
+    int succeed  = join_pic_detect(rand_seed, picNames, result, network_ptr, self); 
+    sts->finished = 1;     
+    pthread_cond_wait(&(sts->cond), &lock);     
+    pthread_mutex_unlock(&lock);
     if(succeed)
         pthread_exit(result);
     else
@@ -57,14 +105,14 @@ void* thread_func(void* _args){
 
 unsigned char* wait_for_thread(pthread_t thread){
     unsigned char* t_result;    
+    printf("getting %lu thread reasult\n", thread);
     pthread_join(thread, &t_result);    
-    //print_bytes(t_result, 32, "result in thread return");
-    //printf("t_result result p %p\n",t_result);
+    printf("got %lu thread reasult\n", thread);
     return t_result;
 }
 
 pthread_t creat_thread(int rand_seed, const char** picNames, void* network_ptr){
-    thread_been_read = 0;
+    
     struct thread_args *args = malloc (sizeof (struct thread_args));
     args->rand_seed = rand_seed;
     args->result = malloc(32);
@@ -72,38 +120,73 @@ pthread_t creat_thread(int rand_seed, const char** picNames, void* network_ptr){
     args->network_ptr = network_ptr;
 
     pthread_t thread;
-    pthread_create(&thread, NULL, thread_func, args);  
-    //free(args);
+    pthread_create(&thread, NULL, thread_func, args);          
     return thread;    
 }
 
 void cancel_thread(pthread_t thread){
     
-    printf("cancelling a thread %d\n", thread);
+    struct thread_stats* sts = find_thread_stats(thread);
+    if(sts == NULL){
+        printf("thread does not exist\n");
+        return;
+    }    
     pthread_cancel(thread);
-    printf("cancelled a thread %d\n", thread);
+    sts->canceled = 1;
+    printf("cancelled a thread %lu\n", thread);
+
 }
 
+
+
 unsigned char* get_result(pthread_t thread){
+    for(int i = 0; i < MAX_THREAD_NUM; i++){
+        struct thread_stats sts = THREADS_STATS[i];
+        printf("thread %lu started %lu finished %lu\n", sts.thread, sts.started, sts.finished);
+    }
+    //enter_to_continue();
     unsigned char* result = NULL;
-    
-    if(thread_been_read){
-        printf("thread has been read\n");
+    struct thread_stats* sts = find_thread_stats(thread);
+    if(sts == NULL){
+        printf("thread %lu does not exist\n", thread);
         return NULL;
     }
+    else if (!sts->started){
+        printf("thread %lu not started yet\n", thread);
+        return NULL;        
+    }
 
-    if(!thread_finished){
-        printf("thread not finished yet\n");
+    else if(!sts->finished){
+        printf("thread %lu not finished yet\n", thread);
+        return NULL;
+    }
+    else if(sts->read){
+        printf("thread %lu has been read\n", thread);
+        return NULL;
+    }
+    else if (sts->canceled){
+        printf("thread %lu canceled\n", thread);
         return NULL;
     }
     else{
-        printf("Signaling thread to wake\n"); 
-        pthread_cond_signal(&cond1);
+        printf("Signaling thread %lu to wake\n", thread); 
+        pthread_cond_signal(&(sts->cond));
         result = wait_for_thread(thread);
-        // printf("result %p\n", result);
-        // print_bytes(result, 32, "result in interface");
-        thread_been_read = 1;
+        sts->read = 1;
         return result;
     }
 }
 
+
+void test(){
+    for(int i = 0; i < MAX_THREAD_NUM;i++){
+        struct thread_stats* sts = &THREADS_STATS[i];
+        sts->thread = i;
+        sts->started = 1;
+        sts->finished = 0;
+    }
+    for(int i = 0; i < MAX_THREAD_NUM; i++){
+        struct thread_stats sts = THREADS_STATS[i];
+        printf("thread %lu started %lu finished %lu\n", sts.thread, sts.started, sts.finished);
+    }
+}

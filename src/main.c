@@ -4,7 +4,9 @@
 #include <unistd.h>
 
 
-int main(int argc, char **argv){    
+int main(int argc, char **argv){  
+    // test();
+    // return 0;
     if(argc < 2){
         fprintf( "usage: %s <function>, rand_seed\n", argv[0]);
         return 0;
@@ -20,18 +22,28 @@ int main(int argc, char **argv){
 
 
     unsigned long thread = creat_thread(rand_seed, picNames,network_ptr);
+    sleep(2);
+    unsigned long thread1 = creat_thread(rand_seed, picNames,network_ptr);
+    //enter_to_continue();
     int time = 0;
     while(time < 20){
-        if(time == 10){
-            cancel_thread(thread);
-            break;
-        }
+        printf("time is %d\n", time);
+        // if(time == 5){
+        //     cancel_thread(thread);
+        //     //break;
+        // }
 
         unsigned char* result = get_result(thread);
         if(result != NULL){
             printf("result %p\n", result);
             printf("lets print result in main\n");  
             print_bytes(result, 32, "result in main");
+        }
+        unsigned char* result1 = get_result(thread1);
+        if(result1 != NULL){
+            printf("result %p\n", result1);
+            printf("lets print result in main\n");  
+            print_bytes(result1, 32, "result1 in main");
         }
         sleep(1);
         time++;
