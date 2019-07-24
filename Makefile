@@ -52,7 +52,7 @@ CC=gcc
 CPP=g++
 NVCC=/usr/local/cuda/bin/nvcc 
 OPTS=-Ofast
-LDFLAGS= -L/usr/X11R6/lib -lm -pthread -lX11
+LDFLAGS= -L/usr/X11R6/lib -lm -pthread -lX11 -lssl -lcrypto
 COMMON= 
 CFLAGS=-Wall -Wfatal-errors
 
@@ -85,7 +85,7 @@ endif
 ifeq ($(GPU), 1) 
 COMMON+= -DGPU -I/usr/local/cuda/include/
 CFLAGS+= -DGPU
-LDFLAGS+= -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas -lcurand
+LDFLAGS+= -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas -lcurand 
 endif
 
 ifeq ($(CUDNN), 1) 
@@ -95,8 +95,8 @@ LDFLAGS+= -L/usr/local/cudnn/lib64 -lcudnn
 endif
 
 MAIN_OBJ=main.o
-OBJ=main.o join_pic_detect.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o print_sth.o join_pics.o Sha256.o digger_interface.o
-STATIC_LINK_OBJ=join_pic_detect.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o print_sth.o join_pics.o Sha256.o digger_interface.o
+OBJ=main.o join_pic_detect.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o print_sth.o join_pics.o Sha256.o digger_interface.o md5.o
+STATIC_LINK_OBJ=join_pic_detect.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o print_sth.o join_pics.o Sha256.o digger_interface.o md5.o
 LDFLAGS+= -lstdc++ 
 ifeq ($(GPU), 1) 
 OBJ+=gpu.o yolov2_forward_network_gpu.o 

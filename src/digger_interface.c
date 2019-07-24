@@ -4,9 +4,15 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#include "md5.h"
 #define CFG "yolov3.cfg"
 #define WEIGHTS_FILE "yolov3.weights"
+#define COCONAME "coco.names"
 #define MAX_THREAD_NUM 10
+
+#define WEIGHTS_FILE_MD5 {0xc8, 0x4e, 0x5b, 0x99, 0xd0, 0xe5, 0x2c, 0xd4, 0x66, 0xae, 0x71, 0x0c, 0xad, 0xf6, 0xd8, 0x4c}
+#define CFG_MD5 {0x9b, 0x7d, 0x21, 0xd6, 0xbb, 0xf6, 0x3a, 0x7c, 0xa9, 0xb6, 0x38, 0x4d, 0x6c, 0xf6, 0x4a, 0x2e}
+#define COCO_NAME_MD5 {0x8f, 0xc5, 0x5, 0x61, 0x36, 0x1f, 0x8b, 0xcf, 0x96, 0xb0, 0x17, 0x70, 0x86, 0xe7, 0x61, 0x6c}
 
 struct thread_args {
     int rand_seed;
@@ -34,6 +40,35 @@ struct thread_stats THREADS_STATS[MAX_THREAD_NUM];
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER; 
 
 void* init_yolov3_data(){
+    const unsigned char weight_file_md5[] = WEIGHTS_FILE_MD5;
+    const unsigned char cfg_md5[] = CFG_MD5;
+    const unsigned char coco_name_md5[] = COCO_NAME_MD5;
+    int validate = 0;
+    
+    validate = validate_md5(WEIGHTS_FILE,weight_file_md5);
+    if(validate != 1){
+        printf("weight file currupted\n");
+        return NULL;
+    }
+    else 
+        printf("weight file is correct!\n");
+
+    validate = validate_md5(CFG,cfg_md5);
+    if(validate != 1){
+        printf("cfg file currupted\n");
+        return NULL;
+    }
+    else 
+        printf("cfg file is correct!\n");
+
+    validate = validate_md5(COCONAME,coco_name_md5);
+    if(validate != 1){
+        printf("coco name file currupted\n");
+        return NULL;
+    }
+    else 
+        printf("coco name file is correct!\n");
+
     void* net = initNetwork(CFG, WEIGHTS_FILE);    
     return net;
 }
