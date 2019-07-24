@@ -136,41 +136,42 @@ void cancel_thread(pthread_t thread){
 
 
 
-unsigned char* get_result(pthread_t thread){
-    for(int i = 0; i < MAX_THREAD_NUM; i++){
-        struct thread_stats sts = THREADS_STATS[i];
-        printf("thread %lu started %lu finished %lu\n", sts.thread, sts.started, sts.finished);
-    }
-    //enter_to_continue();
-    unsigned char* result = NULL;
+int get_result(pthread_t thread, unsigned char* result){
+    // for(int i = 0; i < MAX_THREAD_NUM; i++){
+    //     struct thread_stats sts = THREADS_STATS[i];
+    //     printf("thread %lu started %lu finished %lu\n", sts.thread, sts.started, sts.finished);
+    // }    
+    
     struct thread_stats* sts = find_thread_stats(thread);
     if(sts == NULL){
         printf("thread %lu does not exist\n", thread);
-        return NULL;
+        return 0;
     }
     else if (!sts->started){
         printf("thread %lu not started yet\n", thread);
-        return NULL;        
+        return 0;        
     }
 
     else if(!sts->finished){
         printf("thread %lu not finished yet\n", thread);
-        return NULL;
+        return 0;
     }
     else if(sts->read){
         printf("thread %lu has been read\n", thread);
-        return NULL;
+        return 0;
     }
     else if (sts->canceled){
         printf("thread %lu canceled\n", thread);
-        return NULL;
+        return 0;
     }
     else{
         printf("Signaling thread %lu to wake\n", thread); 
         pthread_cond_signal(&(sts->cond));
-        result = wait_for_thread(thread);
+        unsigned char* tmp_result = wait_for_thread(thread);
+        memcpy(result, tmp_result, 32);
         sts->read = 1;
-        return result;
+        free(tmp_result);
+        return 1;
     }
 }
 

@@ -29,7 +29,7 @@ How to use the library:
     On GPU:
         gcc ./obj/main.o -L./bin/static/ -lgold_digger -o bin/gold_digger -L/usr/X11R6/lib -lm -pthread -lX11 -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas -lcurand -L/usr/local/cudnn/lib64 -lcudnn -lstdc++ 
     Following the Makefile can give you some insight on how the compile works.
-    
+
 * The functions you can use in the library:
     The functions are declared in src/digger_interfaces.h file:
     
@@ -41,6 +41,7 @@ How to use the library:
 
         void cancel_thread(pthread_t thread);
 
-        unsigned char* get_result(pthread_t thread);
+        //return 0 means getting result failed, return 1 means getting result succeeded 
+        int get_result(pthread_t thread, unsigned char* result);
     A brief example of using these functions are in src/main.c
 

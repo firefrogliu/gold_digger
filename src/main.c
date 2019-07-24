@@ -26,6 +26,8 @@ int main(int argc, char **argv){
     unsigned long thread1 = creat_thread(rand_seed, picNames,network_ptr);
     //enter_to_continue();
     int time = 0;
+    unsigned char* result = malloc(32);
+    unsigned char* result1 = malloc(32);
     while(time < 20){
         printf("time is %d\n", time);
         // if(time == 5){
@@ -33,14 +35,16 @@ int main(int argc, char **argv){
         //     //break;
         // }
 
-        unsigned char* result = get_result(thread);
-        if(result != NULL){
+       
+        int succeed = get_result(thread, result);
+        if(succeed){
             printf("result %p\n", result);
             printf("lets print result in main\n");  
             print_bytes(result, 32, "result in main");
         }
-        unsigned char* result1 = get_result(thread1);
-        if(result1 != NULL){
+        
+        int succeed1 = get_result(thread1, result1);
+        if(succeed1){
             printf("result %p\n", result1);
             printf("lets print result in main\n");  
             print_bytes(result1, 32, "result1 in main");

@@ -1008,7 +1008,7 @@ void run_test_detector(char* filename,char* obj_names, char* cfg, char* weights,
 
 
 int join_pic_detect(int rand_seed, const char** picNames,unsigned char* result, void* network_ptr, unsigned long thread){
-    printf("rand seed in join_pic_detect is %d\n", rand_seed);
+    //printf("rand seed in join_pic_detect is %d\n", rand_seed);
     //int join_succeed = join_pics(rand_seed, PIC_SIZE_X,PIC_SIZE_Y, DIVIDE_X, DIVIDE_Y, PICS_PATH, JOIN_PIC_NAME);
     char joinPicName[256];    
     char buffer[sizeof(unsigned long)*8+1];
@@ -1016,7 +1016,7 @@ int join_pic_detect(int rand_seed, const char** picNames,unsigned char* result, 
     sprintf(buffer, "%lu", thread);  
     strcpy(joinPicName,buffer);  
     strcat(joinPicName,appendix); 
-    printf("join pic name is %s\n", joinPicName);
+    //printf("join pic name is %s\n", joinPicName);
     int join_succeed =  join_16_pics(rand_seed,picNames, PIC_SIZE_X,PIC_SIZE_Y, joinPicName);
 
     int dont_show = 1;
