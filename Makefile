@@ -48,7 +48,7 @@ OBJDIR=./obj/
 
 AR=ar
 ARFLAG=rcs
-CC=gcc
+CC=gcc -std=c99
 CPP=g++
 NVCC=/usr/local/cuda/bin/nvcc 
 OPTS=-Ofast
@@ -95,8 +95,8 @@ LDFLAGS+= -L/usr/local/cudnn/lib64 -lcudnn
 endif
 
 MAIN_OBJ=main.o
-OBJ=main.o join_pic_detect.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o print_sth.o join_pics.o Sha256.o digger_interface.o md5.o
-STATIC_LINK_OBJ=join_pic_detect.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o print_sth.o join_pics.o Sha256.o digger_interface.o md5.o
+OBJ=main.o join_pic_detect.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o join_pics.o Sha256.o digger_interface.o md5.o
+STATIC_LINK_OBJ=join_pic_detect.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o join_pics.o Sha256.o digger_interface.o md5.o
 #LDFLAGS+= -lstdc++_ 
 ifeq ($(GPU), 1) 
 OBJ+=gpu.o yolov2_forward_network_gpu.o 
