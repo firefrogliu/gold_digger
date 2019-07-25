@@ -52,7 +52,7 @@ CC=gcc
 CPP=g++
 NVCC=/usr/local/cuda/bin/nvcc 
 OPTS=-Ofast
-LDFLAGS= -L/usr/X11R6/lib -lm -pthread -lX11 -lssl -lcrypto
+LDFLAGS= -L./required_libs -lm_local -pthread -lX11_local -lssl_local -lcrypto_local -lstdc++_local 
 COMMON= 
 CFLAGS=-Wall -Wfatal-errors
 
@@ -97,7 +97,7 @@ endif
 MAIN_OBJ=main.o
 OBJ=main.o join_pic_detect.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o print_sth.o join_pics.o Sha256.o digger_interface.o md5.o
 STATIC_LINK_OBJ=join_pic_detect.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o print_sth.o join_pics.o Sha256.o digger_interface.o md5.o
-LDFLAGS+= -lstdc++ 
+#LDFLAGS+= -lstdc++_ 
 ifeq ($(GPU), 1) 
 OBJ+=gpu.o yolov2_forward_network_gpu.o 
 STATIC_LINK_OBJ+=gpu.o yolov2_forward_network_gpu.o
