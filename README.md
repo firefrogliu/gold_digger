@@ -25,8 +25,8 @@ How to start:
 How to use the library:
 * To link the library libgold_digger.a into your program, try the following make constructions, (assuming you have a compiled main.o file):
     On CPU:
-        gcc ./obj/main.o -L./bin/static/ -lgold_digger -o bin/gold_digger -L/usr/X11R6/lib -lm -pthread -lX11 -lstdc++  
-    On GPU:
+        gcc ./obj/main.o -L./bin/static/ -lgold_digger -o bin/gold_digger -L./required_libs -lm_local -pthread -lX11_local -lssl_local -lcrypto_local -lstdc++_local
+    On GPU:(not working rigth now)
         gcc ./obj/main.o -L./bin/static/ -lgold_digger -o bin/gold_digger -L/usr/X11R6/lib -lm -pthread -lX11 -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas -lcurand -L/usr/local/cudnn/lib64 -lcudnn -lstdc++ 
     Following the Makefile can give you some insight on how the compile works.
 
