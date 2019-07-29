@@ -99,7 +99,8 @@
 #define cimg_OS 1
 #elif defined(_MSC_VER) || defined(WIN32)  || defined(_WIN32) || defined(__WIN32__) \
    || defined(WIN64)    || defined(_WIN64) || defined(__WIN64__)
-#define cimg_OS 2
+#define c
+img_OS 2
 #else
 #define cimg_OS 0
 #endif

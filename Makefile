@@ -52,7 +52,7 @@ CC=gcc -std=c99
 CPP=g++
 NVCC=/usr/local/cuda/bin/nvcc 
 OPTS=-Ofast
-LDFLAGS= -L./required_libs -lm_local -pthread -lX11_local -lssl_local -lcrypto_local -lstdc++_local 
+LDFLAGS= -L./required_libs -lm -pthread -lX11 -lssl -lcrypto -lstdc++ 
 COMMON= 
 CFLAGS=-Wall -Wfatal-errors
 
