@@ -49,10 +49,11 @@ OBJDIR=./obj/
 AR=ar
 ARFLAG=rcs
 CC=gcc -std=c99
-CPP=g++
+INC_FLAG=-I/usr/local/openssl/include/
+CPP=g++ -std=c++11
 NVCC=/usr/local/cuda/bin/nvcc 
 OPTS=-Ofast
-LDFLAGS= -L./required_libs -lm -pthread -lX11 -lssl -lcrypto -lstdc++ 
+LDFLAGS=-lm -pthread -lX11 -lssl -lcrypto -lstdc++ 
 COMMON= 
 CFLAGS=-Wall -Wfatal-errors
 
@@ -123,10 +124,10 @@ $(SHARED): $(OBJS)
 	$(CC) -shared $(CFLAGS) $^ -o $@ 	
 
 $(OBJDIR)%.o: %.c $(DEPS)
-	$(CC) $(COMMON) $(CFLAGS) -c $< -o $@
+	$(CC) $(INC_FLAG) $(COMMON) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)%.o: %.cpp $(DEPS)
-	$(CC) $(COMMON) $(CFLAGS) -c $< -o $@
+	$(CPP) $(COMMON) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)%.o: %.cu $(DEPS)
 	$(NVCC) $(ARCH) $(COMMON) --compiler-options "$(CFLAGS)" -c $< -o $@
