@@ -13,8 +13,8 @@ int main(int argc, char **argv){
     }
 
     int rand_seed = strtol(argv[1], NULL, 10);   
-    const char* picNames[] = {"./testPics/00d66ed55093c3bf.jpg",  "./testPics/0222359686b52503.jpg",  "./testPics/03b34394c4fae1d2.jpg",  "./testPics/0574623c2473a463.jpg",  "./testPics/076c438efda49fac.jpg"  ,"./testPics/0973221d1bc979c1.jpg",  "./testPics/0b96750f7bfbef43.jpg",  "./testPics/0dc5f1cf71842cbe.jpg",
-"./testPics/00d67ab9e6db2059.jpg",  "./testPics/0222397d2ce9241e.jpg",  "./testPics/03b351e2faa608fe.jpg",  "./testPics/057463e74cc756bd.jpg",  "./testPics/076c44dc65599558.jpg",  "./testPics/097335b71ef0ebca.jpg",  "./testPics/0b967884421ea018.jpg",  "./testPics/0dc6006b96ae1213.jpg"
+    const char* picNames[] = {"./16_testPics/00d66ed55093c3bf.jpg",  "./16_testPics/0222359686b52503.jpg",  "./16_testPics/03b34394c4fae1d2.jpg",  "./16_testPics/0574623c2473a463.jpg",  "./16_testPics/076c438efda49fac.jpg"  ,"./16_testPics/0973221d1bc979c1.jpg",  "./16_testPics/0b96750f7bfbef43.jpg",  "./16_testPics/0dc5f1cf71842cbe.jpg",
+"./16_testPics/00d67ab9e6db2059.jpg",  "./16_testPics/0222397d2ce9241e.jpg",  "./16_testPics/03b351e2faa608fe.jpg",  "./16_testPics/057463e74cc756bd.jpg",  "./16_testPics/076c44dc65599558.jpg",  "./16_testPics/097335b71ef0ebca.jpg",  "./16_testPics/0b967884421ea018.jpg",  "./16_testPics/0dc6006b96ae1213.jpg"
 };
     void* network_ptr = init_yolov3_data();
   
