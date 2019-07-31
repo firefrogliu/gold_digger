@@ -29,6 +29,8 @@ install libX11-devel:
 
 install gcc-c++
     sudo yum install gcc-c++ 
+install  libjpeg
+    yum install libjpeg-turbo-devel
 
 cd gold_digger/
 make clean
