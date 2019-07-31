@@ -1,2 +1,6 @@
 testPics/
 yolov3.weights
+*.o
+gold_digger
+*.a
+*.so

@@ -53,7 +53,7 @@ INC_FLAG=-I/usr/local/openssl/include/
 CPP=g++ -std=c++11
 NVCC=/usr/local/cuda/bin/nvcc 
 OPTS=-Ofast
-LDFLAGS=-lm -pthread -lX11 -lssl -lcrypto -lstdc++ 
+LDFLAGS=-lm -pthread -lX11 -lssl -lcrypto -lstdc++ -ljpeg 
 COMMON= 
 CFLAGS=-Wall -Wfatal-errors
 

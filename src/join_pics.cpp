@@ -1,3 +1,4 @@
+#define cimg_use_jpeg
 #include "join_pics.h"
 #include <stdio.h>
 #include "CImg.h"
