@@ -4,3 +4,4 @@ yolov3.weights
 gold_digger
 *.a
 *.so
+*.jpg
