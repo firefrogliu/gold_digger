@@ -3,7 +3,7 @@
 #include <pthread.h>
 
 //init the network used for yolov3, return a network_ptr
-void* init_yolov3_data();
+void* init_yolov3_data(const char* weight_file, const char* cfg, const char* coco_names);
 
 //create a thread given rand seed, picNames, network_ptr (yolo v3 network weights)
 pthread_t creat_thread(int rand_seed, const char** picNames, void* network_ptr);

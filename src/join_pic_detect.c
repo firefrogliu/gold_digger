@@ -32,9 +32,6 @@
 
 #define PICS_PATH "./testPics/"
 #define JOIN_PIC_NAME_APPENDIX "join.jpg"
-#define NAMES "coco.names"
-#define CFG "yolov3.cfg"
-#define WEIGHTS_FILE "yolov3.weights"
 #define PIC_SIZE_X 500
 #define PIC_SIZE_Y 500
 #define DIVIDE_X 3
@@ -974,7 +971,7 @@ void run_detector(int argc, char **argv)
     free(names);
 }
 
-void run_test_detector(char* filename,char* obj_names, char* cfg, char* weights, int dont_show, float thresh, unsigned char* result_512bits, void* net_ptr){
+void run_test_detector(char* filename,char* obj_names, int dont_show, float thresh, unsigned char* result_512bits, void* net_ptr){
     
     int clear = 0;                // find_arg(argc, argv, "-clear");
     int quantized = 0;
@@ -1000,8 +997,7 @@ void run_test_detector(char* filename,char* obj_names, char* cfg, char* weights,
     DIR *dir = opendir(input);
     if(!dir)
         test_detector_cpu_networkloaded(names,  filename, thresh, quantized, dont_show, net_ptr, result_512bits);
-    else 
-        test_detector_cpu_folder(names, cfg, weights, filename, thresh, quantized, dont_show);
+    
  
 }
 
@@ -1030,7 +1026,7 @@ int join_pic_detect(int rand_seed, const char** picNames,unsigned char* result, 
         //void* net_ptr =  initNetwork(CFG,WEIGHTS_FILE);
         
 
-        run_test_detector(joinPicName, NAMES, CFG, WEIGHTS_FILE, dont_show, thresh, result_512bits, network_ptr);
+        run_test_detector(joinPicName, COCONAME, dont_show, thresh, result_512bits, network_ptr);
         remove(joinPicName);
         CSha256 Csha;
         Sha256_Init(&Csha);

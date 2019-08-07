@@ -49,6 +49,7 @@
         "rotatedefs.h": "c",
         "unistd.h": "c",
         "interface.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "join_pic_detect.h": "c"
     }
 }
