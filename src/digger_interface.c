@@ -3,7 +3,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdio.h>
-
+#include "sclog4c/sclog4c.h"
 #include "md5.h"
 
 #define MAX_THREAD_NUM 10
@@ -50,36 +50,39 @@ void* init_yolov3_data(const char* weight_file, const char* cfg, const char* coc
     
     validate = validate_md5(weight_file,weight_file_md5);
     if(validate != 1){
-        printf("weight file currupted\n");
+        logm(SL4C_DEBUG, "weight file currupted");
         return NULL;
     }
-    else 
-        printf("weight file is correct!\n");
+    else{
+        logm(SL4C_DEBUG, "weight file is correct!");
+    } 
    
     validate = validate_md5(cfg,cfg_md5);
     if(validate != 1){
-        printf("cfg file currupted\n");
+        logm(SL4C_DEBUG, "cfg file currupted");
         return NULL;
     }
-    else 
-        printf("cfg file is correct!\n");
+    else{
+        logm(SL4C_DEBUG, "cfg file is correct!");
+    } 
     validate = validate_md5(coco_names,coco_name_md5);
     if(validate != 1){
-        printf("coco name file currupted\n");
+        logm(SL4C_DEBUG, "coco name file currupted");
         return NULL;
     }
-    else 
-        printf("coco name file is correct!\n");
+    else{
+        logm(SL4C_DEBUG, "coco name file is correct!");
+    }
 
     void* net = initNetwork(CFG, WEIGHTS_FILE);    
     return net;
 }
 
 void enter_to_continue(){
-    printf("Press enter to continue\n");
+    logm(SL4C_DEBUG, "Press enter to continue");
     char enter = 0;
     while (enter != '\r' && enter != '\n') { enter = getchar(); }
-    printf("Thank you for pressing enter\n");
+    logm(SL4C_DEBUG, "Thank you for pressing enter");
 }
 
 struct thread_stats * find_thread_stats(pthread_t thread){
@@ -94,18 +97,18 @@ struct thread_stats * find_thread_stats(pthread_t thread){
 void* thread_func(void* _args){
     /* set thread cancel type to asynchronous to make thread quit as soon as possible */
     int rc = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
-    printf("pthread_setcanceltype() %lu\n", rc);
+    logm(SL4C_DEBUG, "pthread_setcanceltype() %lu", rc);
 
     pthread_t  self;
     self = pthread_self();
-    printf("creating thread %lu\n", self);
+    logm(SL4C_DEBUG, "creating thread %lu", self);
 
     /* set thread status */ 
     struct thread_stats* sts = NULL;
     for(int i = 0; i < MAX_THREAD_NUM; i++){
         sts = &THREADS_STATS[i];
         if((!sts->started) || (sts->read) || (sts->canceled)){
-            printf("set thread %lu stats\n", self);
+            logm(SL4C_DEBUG, "set thread %lu stats", self);
             sts->thread = self;
             sts->started = 1;
             sts->finished = 0;
@@ -117,7 +120,7 @@ void* thread_func(void* _args){
     }
 
     if(sts == NULL){
-        printf("cannot creat new thread, thread pool full\n");
+        logm(SL4C_DEBUG, "cannot creat new thread, thread pool full");
         return;
     }
     struct thread_args *args = (struct thread_args *) _args;
@@ -139,9 +142,9 @@ void* thread_func(void* _args){
 
 unsigned char* wait_for_thread(pthread_t thread){
     unsigned char* t_result;    
-    printf("getting %lu thread reasult\n", thread);
+    logm(SL4C_DEBUG, "getting %lu thread reasult", thread);
     pthread_join(thread, &t_result);    
-    printf("got %lu thread reasult\n", thread);
+    logm(SL4C_DEBUG, "got %lu thread reasult", thread);
     return t_result;
 }
 
@@ -162,12 +165,12 @@ void cancel_thread(pthread_t thread){
     
     struct thread_stats* sts = find_thread_stats(thread);
     if(sts == NULL){
-        printf("thread does not exist\n");
+        logm(SL4C_DEBUG, "thread does not exist");
         return;
     }    
     pthread_cancel(thread);
     sts->canceled = 1;
-    printf("cancelled a thread %lu\n", thread);
+    logm(SL4C_DEBUG, "cancelled a thread %lu", thread);
 
 }
 
@@ -176,33 +179,33 @@ void cancel_thread(pthread_t thread){
 int get_result(pthread_t thread, unsigned char* result){
     // for(int i = 0; i < MAX_THREAD_NUM; i++){
     //     struct thread_stats sts = THREADS_STATS[i];
-    //     printf("thread %lu started %lu finished %lu\n", sts.thread, sts.started, sts.finished);
+    //     logm(SL4C_DEBUG, "thread %lu started %lu finished %lu", sts.thread, sts.started, sts.finished);
     // }    
     
     struct thread_stats* sts = find_thread_stats(thread);
     if(sts == NULL){
-        printf("thread %lu does not exist\n", thread);
+        logm(SL4C_DEBUG, "thread %lu does not exist", thread);
         return 0;
     }
     else if (!sts->started){
-        printf("thread %lu not started yet\n", thread);
+        logm(SL4C_DEBUG, "thread %lu not started yet", thread);
         return 0;        
     }
 
     else if(!sts->finished){
-        printf("thread %lu not finished yet\n", thread);
+        logm(SL4C_DEBUG, "thread %lu not finished yet", thread);
         return 0;
     }
     else if(sts->read){
-        printf("thread %lu has been read\n", thread);
+        logm(SL4C_DEBUG, "thread %lu has been read", thread);
         return 0;
     }
     else if (sts->canceled){
-        printf("thread %lu canceled\n", thread);
+        logm(SL4C_DEBUG, "thread %lu canceled", thread);
         return 0;
     }
     else{
-        printf("Signaling thread %lu to wake\n", thread); 
+        logm(SL4C_DEBUG, "Signaling thread %lu to wake", thread); 
         pthread_cond_signal(&(sts->cond));
         unsigned char* tmp_result = wait_for_thread(thread);
         memcpy(result, tmp_result, 32);
@@ -222,6 +225,6 @@ void test(){
     }
     for(int i = 0; i < MAX_THREAD_NUM; i++){
         struct thread_stats sts = THREADS_STATS[i];
-        printf("thread %lu started %lu finished %lu\n", sts.thread, sts.started, sts.finished);
+        logm(SL4C_DEBUG, "thread %lu started %lu finished %lu", sts.thread, sts.started, sts.finished);
     }
 }

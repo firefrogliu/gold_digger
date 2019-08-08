@@ -1,0 +1,52 @@
+./src/digger_interface.c:57: debug: In function init_yolov3_data: weight file is correct!
+./src/digger_interface.c:66: debug: In function init_yolov3_data: cfg file is correct!
+./src/digger_interface.c:74: debug: In function init_yolov3_data: coco name file is correct!
+./src/digger_interface.c:100: debug: In function thread_func: pthread_setcanceltype() 0
+./src/digger_interface.c:104: debug: In function thread_func: creating thread 140736379057920
+./src/digger_interface.c:111: debug: In function thread_func: set thread 140736379057920 stats
+./src/digger_interface.c:196: debug: In function get_result: thread 140736379057920 not finished yet
+./src/digger_interface.c:187: debug: In function get_result: thread 140736370665216 does not exist
+./src/digger_interface.c:104: debug: In function thread_func: creating thread 140736370665216
+./src/digger_interface.c:111: debug: In function thread_func: set thread 140736370665216 stats
+./src/digger_interface.c:196: debug: In function get_result: thread 140736379057920 not finished yet
+./src/digger_interface.c:196: debug: In function get_result: thread 140736370665216 not finished yet
+./src/digger_interface.c:196: debug: In function get_result: thread 140736379057920 not finished yet
+./src/digger_interface.c:196: debug: In function get_result: thread 140736370665216 not finished yet
+./src/digger_interface.c:196: debug: In function get_result: thread 140736379057920 not finished yet
+./src/digger_interface.c:196: debug: In function get_result: thread 140736370665216 not finished yet
+./src/digger_interface.c:196: debug: In function get_result: thread 140736379057920 not finished yet
+./src/digger_interface.c:196: debug: In function get_result: thread 140736370665216 not finished yet
+./src/digger_interface.c:196: debug: In function get_result: thread 140736379057920 not finished yet
+./src/digger_interface.c:196: debug: In function get_result: thread 140736370665216 not finished yet
+./src/digger_interface.c:196: debug: In function get_result: thread 140736379057920 not finished yet
+./src/digger_interface.c:196: debug: In function get_result: thread 140736370665216 not finished yet
+./src/digger_interface.c:208: debug: In function get_result: Signaling thread 140736379057920 to wake
+./src/digger_interface.c:145: debug: In function wait_for_thread: getting 140736379057920 thread reasult
+./src/digger_interface.c:147: debug: In function wait_for_thread: got 140736379057920 thread reasult
+./src/digger_interface.c:208: debug: In function get_result: Signaling thread 140736370665216 to wake
+./src/digger_interface.c:145: debug: In function wait_for_thread: getting 140736370665216 thread reasult
+./src/digger_interface.c:147: debug: In function wait_for_thread: got 140736370665216 thread reasult
+./src/digger_interface.c:200: debug: In function get_result: thread 140736379057920 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736370665216 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736379057920 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736370665216 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736379057920 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736370665216 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736379057920 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736370665216 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736379057920 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736370665216 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736379057920 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736370665216 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736379057920 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736370665216 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736379057920 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736370665216 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736379057920 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736370665216 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736379057920 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736370665216 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736379057920 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736370665216 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736379057920 has been read
+./src/digger_interface.c:200: debug: In function get_result: thread 140736370665216 has been read
