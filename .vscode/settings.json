@@ -51,6 +51,7 @@
         "interface.h": "c",
         "stdio.h": "c",
         "join_pic_detect.h": "c",
-        "sclog4c.h": "c"
+        "sclog4c.h": "c",
+        "cerrno": "c"
     }
 }

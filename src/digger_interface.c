@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "sclog4c/sclog4c.h"
 #include "md5.h"
+#include <time.h>
 
 #define MAX_THREAD_NUM 10
 
@@ -181,7 +182,15 @@ int get_result(pthread_t thread, unsigned char* result){
     //     struct thread_stats sts = THREADS_STATS[i];
     //     logm(SL4C_DEBUG, "thread %lu started %lu finished %lu", sts.thread, sts.started, sts.finished);
     // }    
+    char buffer[26];
+    time_t timer;
+    time(&timer);
+    struct tm* tm_info;
+    tm_info = localtime(&timer);
+    strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
     
+    logm(SL4C_DEBUG, "time is %s", buffer);
+
     struct thread_stats* sts = find_thread_stats(thread);
     if(sts == NULL){
         logm(SL4C_DEBUG, "thread %lu does not exist", thread);

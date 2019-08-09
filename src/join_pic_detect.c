@@ -11,6 +11,7 @@
 #include "additionally.h"
 #include "join_pics.h"
 #include "Sha256.h"
+#include "sclog4c/sclog4c.h"
 
 #ifdef OPENCV
 #include "opencv2/highgui/highgui_c.h"
@@ -38,14 +39,15 @@
 #define DIVIDE_Y 3
 
 void print_hello_join_pic_detect(){
-    printf("hello from join pic detect\n");
+    logm(SL4C_DEBUG,"hello from join pic detect\n");
 }
 
 void print_bytes(unsigned char* bytes, int len, char* name){
-    printf("%s ", name);
-    for(int i = 0; i < len; i++)
-     printf("0x%x, ",*(bytes+i));
-    printf("\n");
+    logm(SL4C_DEBUG,"%s ", name);
+    for(int i = 0; i < len; i++){
+     logm(SL4C_DEBUG,"0x%x, ",*(bytes+i));
+    }
+    logm(SL4C_DEBUG,"\n");
 }
 
 
@@ -115,7 +117,7 @@ void report_detection(image im, detection *dets, int num, float thresh, char **n
     
     for (i = 0; i < selected_detections_num && i < 4; ++i) {
         const int best_class = selected_detections[i].best_class;
-        printf("%s: %.0f%%", names[best_class], selected_detections[i].det.prob[best_class] * 100);
+        logm(SL4C_DEBUG,"%s: %.0f%%", names[best_class], selected_detections[i].det.prob[best_class] * 100);
 
         //set result 512 bits
         if(result_memcpy_ptr + sizeof(names[best_class]) < 64){
@@ -132,17 +134,17 @@ void report_detection(image im, detection *dets, int num, float thresh, char **n
         }
 
         // if (ext_output)
-        //     printf("\t(left_x: %4.0f   top_y: %4.0f   width: %4.0f   height: %4.0f)\n",
+        //     logm(SL4C_DEBUG,"\t(left_x: %4.0f   top_y: %4.0f   width: %4.0f   height: %4.0f)\n",
         //         round((selected_detections[i].det.bbox.x - selected_detections[i].det.bbox.w / 2)*im.w),
         //         round((selected_detections[i].det.bbox.y - selected_detections[i].det.bbox.h / 2)*im.h),
         //         round(selected_detections[i].det.bbox.w*im.w), round(selected_detections[i].det.bbox.h*im.h));
         //else
-            // printf("\n");
+            // logm(SL4C_DEBUG,"\n");
         // int j;
         // for (j = 0; j < classes; ++j) {
         //     if (selected_detections[i].det.prob[j] > thresh && j != best_class) {
-        //         printf("%s: %.0f%%\n", names[j], selected_detections[i].det.prob[j] * 100);
-        //         printf("%s: %f\n", names[j], selected_detections[i].det.prob[j]);
+        //         logm(SL4C_DEBUG,"%s: %.0f%%\n", names[j], selected_detections[i].det.prob[j] * 100);
+        //         logm(SL4C_DEBUG,"%s: %f\n", names[j], selected_detections[i].det.prob[j]);
         //     }
         // }
 
@@ -160,20 +162,22 @@ void draw_detections_v3(image im, detection *dets, int num, float thresh, char *
     int i;
     for (i = 0; i < selected_detections_num; ++i) {
         const int best_class = selected_detections[i].best_class;
-        //printf("%s: %.0f%%", names[best_class], selected_detections[i].det.prob[best_class] * 100);
-        printf("%s: %f\n", names[best_class], selected_detections[i].det.prob[best_class]);
-        if (ext_output)
-            printf("\t(left_x: %4.0f   top_y: %4.0f   width: %4.0f   height: %4.0f)\n",
+        //logm(SL4C_DEBUG,"%s: %.0f%%", names[best_class], selected_detections[i].det.prob[best_class] * 100);
+        if (ext_output){            
+        logm(SL4C_DEBUG,"%s: %f\n", names[best_class], selected_detections[i].det.prob[best_class]);
+            logm(SL4C_DEBUG,"\t(left_x: %4.0f   top_y: %4.0f   width: %4.0f   height: %4.0f)\n",
                 round((selected_detections[i].det.bbox.x - selected_detections[i].det.bbox.w / 2)*im.w),
                 round((selected_detections[i].det.bbox.y - selected_detections[i].det.bbox.h / 2)*im.h),
                 round(selected_detections[i].det.bbox.w*im.w), round(selected_detections[i].det.bbox.h*im.h));
-        else
-            printf("\n");
+        }
+        else{
+            logm(SL4C_DEBUG,"\n");
+        }
         int j;
         for (j = 0; j < classes; ++j) {
             if (selected_detections[i].det.prob[j] > thresh && j != best_class) {
-                //printf("%s: %.0f%%\n", names[j], selected_detections[i].det.prob[j] * 100);
-                printf("%s: %f\n", names[j], selected_detections[i].det.prob[j]);
+                //logm(SL4C_DEBUG,"%s: %.0f%%\n", names[j], selected_detections[i].det.prob[j] * 100);
+                logm(SL4C_DEBUG,"%s: %f\n", names[j], selected_detections[i].det.prob[j]);
             }
         }
     }
@@ -192,7 +196,7 @@ void draw_detections_v3(image im, detection *dets, int num, float thresh, char *
         }
         */
 
-        //printf("%d %s: %.0f%%\n", i, names[selected_detections[i].best_class], prob*100);
+        //logm(SL4C_DEBUG,"%d %s: %.0f%%\n", i, names[selected_detections[i].best_class], prob*100);
         int offset = selected_detections[i].best_class * 123457 % classes;
         float red = get_color(2, offset, classes);
         float green = get_color(1, offset, classes);
@@ -205,7 +209,7 @@ void draw_detections_v3(image im, detection *dets, int num, float thresh, char *
         rgb[1] = green;
         rgb[2] = blue;
         box b = selected_detections[i].det.bbox;
-        //printf("%f %f %f %f\n", b.x, b.y, b.w, b.h);
+        //logm(SL4C_DEBUG,"%f %f %f %f\n", b.x, b.y, b.w, b.h);
 
         int left = (b.x - b.w / 2.)*im.w;
         int right = (b.x + b.w / 2.)*im.w;
@@ -224,7 +228,7 @@ void draw_detections_v3(image im, detection *dets, int num, float thresh, char *
 
 
 void save_detect_info(const char* save_file, detection *dets, int nboxes, float thresh, char **names, int classes, const char* img_name){
-    printf("saving detect for %s.\n", img_name);
+    logm(SL4C_DEBUG,"saving detect for %s.\n", img_name);
     FILE* f = fopen(save_file, "a");
     fprintf(f,"%s\t", img_name);
     int i,j;
@@ -265,7 +269,7 @@ void test_detector_cpu_folder(char **names, char *cfgfile, char *weightfile, cha
     yolov2_fuse_conv_batchnorm(net);
     calculate_binary_weights(net);
     if (quantized) {
-        printf("\n\n Quantinization! \n\n");
+        logm(SL4C_DEBUG,"\n\n Quantinization! \n\n");
         quantinization_and_get_multipliers(net);
     }
     clock_t time;
@@ -284,7 +288,7 @@ void test_detector_cpu_folder(char **names, char *cfgfile, char *weightfile, cha
     if(foldername){
         strncpy(input, foldername, 256);
     } else {
-        printf("Enter Image Path: ");
+        logm(SL4C_DEBUG,"Enter Image Path: ");
         fflush(stdout);
         input = fgets(input, 256, stdin);
         if(!input) return;
@@ -343,7 +347,7 @@ void test_detector_cpu_folder(char **names, char *cfgfile, char *weightfile, cha
             }
     #endif
     #endif
-            printf("%s: Predicted in %f seconds.\n", input, (float)(clock() - time) / CLOCKS_PER_SEC); //sec(clock() - time));
+            logm(SL4C_DEBUG,"%s: Predicted in %f seconds.\n", input, (float)(clock() - time) / CLOCKS_PER_SEC); //sec(clock() - time));
             //get_region_boxes_cpu(l, 1, 1, thresh, probs, boxes, 0, 0);            // get_region_boxes(): region_layer.c
 
             //  nms (non maximum suppression) - if (IoU(box[i], box[j]) > nms) then remove one of two boxes with lower probability
@@ -373,14 +377,14 @@ void test_detector_cpu_folder(char **names, char *cfgfile, char *weightfile, cha
 }
 
 void* initNetwork(char *cfgfile,char *weightfile){
-    printf("loading network\n");
+    logm(SL4C_DEBUG,"loading network\n");
     int quantized = 0;
     network *net = malloc(sizeof(network));
     *net =  parse_network_cfg(cfgfile, 1, quantized);    
     if (weightfile) {
         load_weights_upto_cpu(net, weightfile, net->n);    // parser.c
     }
-    printf("loading network done\n");
+    logm(SL4C_DEBUG,"loading network done\n");
     return (void*)net;
 }
 
@@ -393,7 +397,7 @@ void test_detector_cpu_networkloaded(char **names, char *filename, float thresh,
     yolov2_fuse_conv_batchnorm(net);
     calculate_binary_weights(net);
     if (quantized) {
-        printf("\n\n Quantinization! \n\n");
+        logm(SL4C_DEBUG,"\n\n Quantinization! \n\n");
         quantinization_and_get_multipliers(net);
     }
     clock_t time;
@@ -406,7 +410,7 @@ void test_detector_cpu_networkloaded(char **names, char *filename, float thresh,
             strncpy(input, filename, 256);
         }
         else {
-            printf("Enter Image Path: ");
+            logm(SL4C_DEBUG,"Enter Image Path: ");
             fflush(stdout);
             input = fgets(input, 256, stdin);
             if (!input) return;
@@ -444,7 +448,7 @@ void test_detector_cpu_networkloaded(char **names, char *filename, float thresh,
         }
 #endif
 #endif
-        //printf("%s: Predicted in %f seconds.\n", input, (float)(clock() - time) / CLOCKS_PER_SEC); //sec(clock() - time));
+        //logm(SL4C_DEBUG,"%s: Predicted in %f seconds.\n", input, (float)(clock() - time) / CLOCKS_PER_SEC); //sec(clock() - time));
         //get_region_boxes_cpu(l, 1, 1, thresh, probs, boxes, 0, 0);            // get_region_boxes(): region_layer.c
 
         // nms (non maximum suppression) - if (IoU(box[i], box[j]) > nms) then remove one of two boxes with lower probability
@@ -489,7 +493,7 @@ void test_detector_cpu(char **names, char *cfgfile, char *weightfile, char *file
     yolov2_fuse_conv_batchnorm(net);
     calculate_binary_weights(net);
     if (quantized) {
-        printf("\n\n Quantinization! \n\n");
+        logm(SL4C_DEBUG,"\n\n Quantinization! \n\n");
         quantinization_and_get_multipliers(net);
     }
     clock_t time;
@@ -502,7 +506,7 @@ void test_detector_cpu(char **names, char *cfgfile, char *weightfile, char *file
             strncpy(input, filename, 256);
         }
         else {
-            printf("Enter Image Path: ");
+            logm(SL4C_DEBUG,"Enter Image Path: ");
             fflush(stdout);
             input = fgets(input, 256, stdin);
             if (!input) return;
@@ -541,7 +545,7 @@ void test_detector_cpu(char **names, char *cfgfile, char *weightfile, char *file
         }
 #endif
 #endif
-        printf("%s: Predicted in %f seconds.\n", input, (float)(clock() - time) / CLOCKS_PER_SEC); //sec(clock() - time));
+        logm(SL4C_DEBUG,"%s: Predicted in %f seconds.\n", input, (float)(clock() - time) / CLOCKS_PER_SEC); //sec(clock() - time));
         //get_region_boxes_cpu(l, 1, 1, thresh, probs, boxes, 0, 0);            // get_region_boxes(): region_layer.c
 
         // nms (non maximum suppression) - if (IoU(box[i], box[j]) > nms) then remove one of two boxes with lower probability
@@ -617,13 +621,13 @@ void draw_detections_cv_v3(IplImage* show_img, detection *dets, int num, float t
                     strcat(labelstr, ", ");
                     strcat(labelstr, names[j]);
                 }
-                printf("%s: %.0f%% ", names[j], dets[i].prob[j] * 100);
+                logm(SL4C_DEBUG,"%s: %.0f%% ", names[j], dets[i].prob[j] * 100);
             }
         }
         if (class_id >= 0) {
             int width = show_img->height * .006;
 
-            //printf("%d %s: %.0f%%\n", i, names[class_id], prob*100);
+            //logm(SL4C_DEBUG,"%d %s: %.0f%%\n", i, names[class_id], prob*100);
             int offset = class_id * 123457 % classes;
             float red = get_color(2, offset, classes);
             float green = get_color(1, offset, classes);
@@ -636,7 +640,7 @@ void draw_detections_cv_v3(IplImage* show_img, detection *dets, int num, float t
             rgb[1] = green;
             rgb[2] = blue;
             box b = dets[i].bbox;
-            //printf("%f %f %f %f\n", b.x, b.y, b.w, b.h);
+            //logm(SL4C_DEBUG,"%f %f %f %f\n", b.x, b.y, b.w, b.h);
 
             int left = (b.x - b.w / 2.)*show_img->width;
             int right = (b.x + b.w / 2.)*show_img->width;
@@ -667,10 +671,10 @@ void draw_detections_cv_v3(IplImage* show_img, detection *dets, int num, float t
 
             cvRectangle(show_img, pt1, pt2, color, width, 8, 0);
             if (ext_output)
-                printf("\t(left_x: %4.0f   top_y: %4.0f   width: %4.0f   height: %4.0f)\n",
+                logm(SL4C_DEBUG,"\t(left_x: %4.0f   top_y: %4.0f   width: %4.0f   height: %4.0f)\n",
                 (float)left, (float)top, b.w*show_img->width, b.h*show_img->height);
             else
-                printf("\n");
+                logm(SL4C_DEBUG,"\n");
             cvRectangle(show_img, pt_text_bg1, pt_text_bg2, color, width, 8, 0);
             cvRectangle(show_img, pt_text_bg1, pt_text_bg2, color, CV_FILLED, 8, 0);    // filled
             CvScalar black_color;
@@ -754,10 +758,10 @@ static void *detect_in_thread(void *ptr)
     draw_detections_cv_v3(det_img, dets, nboxes, demo_thresh, demo_names, NULL, demo_classes, ext_output);
     free_detections(dets, nboxes);
 
-    printf("\033[2J");
-    printf("\033[1;1H");
-    printf("\nFPS:%.1f\n", fps);
-    printf("Objects:\n\n");
+    logm(SL4C_DEBUG,"\033[2J");
+    logm(SL4C_DEBUG,"\033[1;1H");
+    logm(SL4C_DEBUG,"\nFPS:%.1f\n", fps);
+    logm(SL4C_DEBUG,"Objects:\n\n");
 
     return 0;
 }
@@ -780,7 +784,7 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
     demo_names = names;
     demo_classes = classes;
     demo_thresh = thresh;
-    printf("Demo\n");
+    logm(SL4C_DEBUG,"Demo\n");
     net = parse_network_cfg(cfgfile, 1, quantized);
     if (weightfile) {
         //load_weights(&net, weightfile);            // parser.c
@@ -790,14 +794,14 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
     yolov2_fuse_conv_batchnorm(net);
     calculate_binary_weights(net);
     if (quantized) {
-        printf("\n\n Quantinization! \n\n");
+        logm(SL4C_DEBUG,"\n\n Quantinization! \n\n");
         demo_quantized = 1;
         quantinization_and_get_multipliers(net);
     }
     srand(2222222);
 
     if (filename) {
-        printf("video file: %s\n", filename);
+        logm(SL4C_DEBUG,"video file: %s\n", filename);
         cap = cvCaptureFromFile(filename);
     }
     else {
@@ -862,14 +866,14 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
         }
         else {
             char buff[256];
-            sprintf(buff, "%s_%08d", prefix, count);
+            slogm(SL4C_DEBUG,buff, "%s_%08d", prefix, count);
             save_image_png(disp, buff);
         }
 
         // save video file
         if (output_video_writer && show_img) {
             cvWriteFrame(output_video_writer, show_img);
-            //printf("\n cvWriteFrame \n");
+            //logm(SL4C_DEBUG,"\n cvWriteFrame \n");
         }
 
         cvReleaseImage(&show_img);
@@ -1004,7 +1008,7 @@ void run_test_detector(char* filename,char* obj_names, int dont_show, float thre
 
 
 int join_pic_detect(int rand_seed, const char** picNames,unsigned char* result, void* network_ptr, unsigned long thread){
-    //printf("rand seed in join_pic_detect is %d\n", rand_seed);
+    //logm(SL4C_DEBUG,"rand seed in join_pic_detect is %d\n", rand_seed);
     //int join_succeed = join_pics(rand_seed, PIC_SIZE_X,PIC_SIZE_Y, DIVIDE_X, DIVIDE_Y, PICS_PATH, JOIN_PIC_NAME);
     char joinPicName[256];    
     char buffer[sizeof(unsigned long)*8+1];
@@ -1012,7 +1016,7 @@ int join_pic_detect(int rand_seed, const char** picNames,unsigned char* result, 
     sprintf(buffer, "%lu", thread);  
     strcpy(joinPicName,buffer);  
     strcat(joinPicName,appendix); 
-    //printf("join pic name is %s\n", joinPicName);
+    //logm(SL4C_DEBUG,"join pic name is %s\n", joinPicName);
     int join_succeed =  join_16_pics(rand_seed,picNames, PIC_SIZE_X,PIC_SIZE_Y, joinPicName);
 
     int dont_show = 1;
@@ -1022,7 +1026,7 @@ int join_pic_detect(int rand_seed, const char** picNames,unsigned char* result, 
 
     
     if(join_succeed){
-        //printf("join succeeded\n");
+        //logm(SL4C_DEBUG,"join succeeded\n");
         //void* net_ptr =  initNetwork(CFG,WEIGHTS_FILE);
         
 
@@ -1033,14 +1037,14 @@ int join_pic_detect(int rand_seed, const char** picNames,unsigned char* result, 
         Sha256_Update(&Csha, result_512bits, 64);
         Sha256_Final(&Csha, hash_result);
         //print_bytes(hash_result, 32, "hash_result");
-        //printf("sizeof result is %d\n", sizeof(result));
+        //logm(SL4C_DEBUG,"sizeof result is %d\n", sizeof(result));
         memcpy(result, hash_result, 32);   
         //print_bytes(result, 32, "result to return");
         return 1;
     }
     else
     {
-        printf("join picture failed\n");
+        logm(SL4C_DEBUG,"join picture failed\n");
         return 0;
     }    
     
