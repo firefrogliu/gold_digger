@@ -72,6 +72,7 @@ int main(int argc, char **argv){
         strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
         
         logm(SL4C_DEBUG, "time is %s", buffer);
+        printf("time is ");
         puts(buffer);
         int succeed = get_result(thread, result);
         if(succeed){

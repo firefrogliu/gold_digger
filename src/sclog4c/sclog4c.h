@@ -10,10 +10,6 @@
 #include <limits.h>
 #include <stdio.h>
 
-extern FILE *fptr;
-#define LOG "log.txt"
-
-
 /** The predefined log levels. */
 enum LogLevel {
     SL4C_ALL = INT_MIN,
@@ -60,13 +56,11 @@ extern const char *describe(int level);
  *      Format arguments.
  */
 #if defined(_doxygen) || defined(__GNUC__) || defined(__CC_ARM)
-#define logm(level, fmt, ...) \   
-    fptr = fopen(LOG, "a"); \
+#define logm(level, fmt, ...) \
     if (level >= SCLOG4C_LEVEL) do { \
         if (level >= sclog4c_level) \
-            fprintf(fptr, "%s:%d: %s: In function %s: " fmt "\n", __FILE__, __LINE__, describe(level), __func__, ##__VA_ARGS__); \
-    } while (0); \
-    fclose(fptr);
+            fprintf(stderr, "%s:%d: %s: In function %s: " fmt "\n", __FILE__, __LINE__, describe(level), __func__, ##__VA_ARGS__); \
+    } while (0)
 #elif defined(__MSC_VER) && (__MSC_VER >= 1400)
 #define logm(level, fmt, ...) \
     if (level >= SCLOG4C_LEVEL) do { \
