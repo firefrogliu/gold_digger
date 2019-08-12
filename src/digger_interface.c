@@ -6,6 +6,7 @@
 //#include "sclog4c/sclog4c.h"
 #include "md5.h"
 #include <time.h>
+#include <string.h>
 
 #define MAX_THREAD_NUM 10
 
@@ -45,11 +46,22 @@ void* init_yolov3_data(const char* weight_file, const char* cfg, const char* coc
     const unsigned char cfg_md5[] = CFG_MD5;
     const unsigned char coco_name_md5[] = COCO_NAME_MD5;
     int validate = 0;
-    WEIGHTS_FILE = weight_file;
-    COCONAME = coco_names;
-    CFG = cfg;
-    
-    validate = validate_md5(weight_file,weight_file_md5);
+    WEIGHTS_FILE = malloc(256);    
+    COCONAME = malloc(256);
+    CFG = malloc(256);
+
+
+    strcpy(WEIGHTS_FILE,weight_file);
+    strcpy(CFG,cfg);
+    strcpy(COCONAME,coco_names);
+
+    printf("weight file is %s\n", WEIGHTS_FILE);
+    printf("CFG file is %s\n", CFG);
+    printf("COCONAME file is %s\n", COCONAME);
+    // enter_to_continue();
+    // printf("im here\n");
+
+    validate = validate_md5(WEIGHTS_FILE,weight_file_md5);
     if(validate != 1){
         printf( "weight file currupted\n");
         return NULL;
@@ -58,7 +70,7 @@ void* init_yolov3_data(const char* weight_file, const char* cfg, const char* coc
         printf( "weight file is correct!\n");
     } 
    
-    validate = validate_md5(cfg,cfg_md5);
+    validate = validate_md5(CFG,cfg_md5);
     if(validate != 1){
         printf( "cfg file currupted\n");
         return NULL;
@@ -66,7 +78,7 @@ void* init_yolov3_data(const char* weight_file, const char* cfg, const char* coc
     else{
         printf( "cfg file is correct!\n");
     } 
-    validate = validate_md5(coco_names,coco_name_md5);
+    validate = validate_md5(COCONAME,coco_name_md5);
     if(validate != 1){
         printf( "coco name file currupted\n");
         return NULL;
