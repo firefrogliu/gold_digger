@@ -96,8 +96,8 @@ LDFLAGS+= -L/usr/local/cudnn/lib64 -lcudnn
 endif
 
 MAIN_OBJ=main.o
-OBJ=main.o join_pic_detect.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o join_pics.o Sha256.o digger_interface.o md5.o #sclog4c.o
-STATIC_LINK_OBJ=join_pic_detect.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o join_pics.o Sha256.o digger_interface.o md5.o #sclog4c.o
+OBJ=main.o join_pic_detect.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o join_pics.o Sha256.o digger_interface.o md5.o sclog4c.o
+STATIC_LINK_OBJ=join_pic_detect.o additionally.o box.o yolov2_forward_network.o yolov2_forward_network_quantized.o join_pics.o Sha256.o digger_interface.o md5.o sclog4c.o
 #LDFLAGS+= -lstdc++_ 
 ifeq ($(GPU), 1) 
 OBJ+=gpu.o yolov2_forward_network_gpu.o 
