@@ -11,7 +11,7 @@
 #include "additionally.h"
 #include "join_pics.h"
 #include "Sha256.h"
-#include "sclog4c/sclog4c.h"
+//#include "sclog4c/sclog4c.h"
 
 #ifdef OPENCV
 #include "opencv2/highgui/highgui_c.h"
@@ -114,10 +114,10 @@ void report_detection(image im, detection *dets, int num, float thresh, char **n
     int result_memcpy_ptr = 0; 
     int i;
     memset(result_512bits,0,64);
-    
+    printf("converting the resutls to 512bits data\n");
     for (i = 0; i < selected_detections_num && i < 4; ++i) {
         const int best_class = selected_detections[i].best_class;
-        printf("%s: %.0f%%", names[best_class], selected_detections[i].det.prob[best_class] * 100);
+        printf("%s: %.0f%%\n", names[best_class], selected_detections[i].det.prob[best_class] * 100);
 
         //set result 512 bits
         if(result_memcpy_ptr + sizeof(names[best_class]) < 64){
@@ -150,6 +150,7 @@ void report_detection(image im, detection *dets, int num, float thresh, char **n
 
         
     }
+    printf("converting finished\n");
 }
 //sort detections by prob
 void draw_detections_v3(image im, detection *dets, int num, float thresh, char **names, image **alphabet, int classes, int ext_output)
@@ -416,6 +417,7 @@ void test_detector_cpu_networkloaded(char **names, char *filename, float thresh,
             if (!input) return;
             strtok(input, "\n");
         }
+        printf("begin loading the picture\n");
         image im = load_image(input, 0, 0, 3);            // image.c
         image sized = resize_image(im, net.w, net.h);    // image.c
         layer l = net.layers[net.n - 1];
@@ -427,6 +429,7 @@ void test_detector_cpu_networkloaded(char **names, char *filename, float thresh,
         float *X = sized.data;        time = clock();
         //network_predict_quantized(net, X);
         
+        printf("begin running the detection network\n");
 #ifdef GPU
         if (quantized) {
             network_predict_gpu_cudnn_quantized(net, X);    // quantized
@@ -456,11 +459,13 @@ void test_detector_cpu_networkloaded(char **names, char *filename, float thresh,
         //draw_detections_cpu(im, l.w*l.h*l.n, thresh, boxes, probs, names, alphabet, l.classes);    // draw_detections(): image.c
         float hier_thresh = 0.5;
         int ext_output = 1, letterbox = 0, nboxes = 0;
+        printf("finished running the network, collecting the results\n");
         detection *dets = get_network_boxes(&net, im.w, im.h, thresh, hier_thresh, 0, 1, &nboxes, letterbox);
         if (nms) {
             do_nms_sort(dets, nboxes, l.classes, nms);
         }
 
+        printf("report the deteciton\n");
         report_detection(im, dets, nboxes, thresh, names, l.classes, ext_output, result_512bits);
         //save_image_png(im, "predictions");    // image.c
         if (!dont_show) {
@@ -976,7 +981,7 @@ void run_detector(int argc, char **argv)
 }
 
 void run_test_detector(char* filename,char* obj_names, int dont_show, float thresh, unsigned char* result_512bits, void* net_ptr){
-    
+    printf("loading classification names\n");
     int clear = 0;                // find_arg(argc, argv, "-clear");
     int quantized = 0;
     // load object names
@@ -999,8 +1004,11 @@ void run_test_detector(char* filename,char* obj_names, int dont_show, float thre
     strncpy(input, filename, 256);
     struct dirent *dp;
     DIR *dir = opendir(input);
-    if(!dir)
+    if(!dir){
+        printf("begin detecting the picture\n");
         test_detector_cpu_networkloaded(names,  filename, thresh, quantized, dont_show, net_ptr, result_512bits);
+        printf("finished detecting the picture\n");
+    }
     
  
 }
@@ -1017,6 +1025,7 @@ int join_pic_detect(int rand_seed, const char** picNames,unsigned char* result, 
     strcpy(joinPicName,buffer);  
     strcat(joinPicName,appendix); 
     //printf("join pic name is %s\n", joinPicName);
+    printf("random join pics\n");
     int join_succeed =  join_16_pics(rand_seed,picNames, PIC_SIZE_X,PIC_SIZE_Y, joinPicName);
 
     int dont_show = 1;
