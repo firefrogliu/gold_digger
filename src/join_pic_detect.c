@@ -1046,7 +1046,7 @@ int join_pic_detect(int rand_seed, const char** picNames,unsigned char* result, 
         Sha256_Init(&Csha);
         Sha256_Update(&Csha, result_512bits, 64);
         Sha256_Final(&Csha, hash_result);
-        //print_bytes(hash_result, 32, "hash_result");
+        print_bytes(hash_result, 32, "hash_result");
         //logm(SL4C_DEBUG,"sizeof result is %d\n", sizeof(result));
         memcpy(result, hash_result, 32);   
         //print_bytes(result, 32, "result to return");

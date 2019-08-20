@@ -14,6 +14,7 @@
 #define CFG_MD5 {0x9b, 0x7d, 0x21, 0xd6, 0xbb, 0xf6, 0x3a, 0x7c, 0xa9, 0xb6, 0x38, 0x4d, 0x6c, 0xf6, 0x4a, 0x2e}
 #define COCO_NAME_MD5 {0x8f, 0xc5, 0x5, 0x61, 0x36, 0x1f, 0x8b, 0xcf, 0x96, 0xb0, 0x17, 0x70, 0x86, 0xe7, 0x61, 0x6c}
 
+int cancel_handler_called_time = 0;
 extern char* WEIGHTS_FILE;
 
 struct thread_args {
@@ -41,7 +42,10 @@ struct thread_stats THREADS_STATS[MAX_THREAD_NUM];
 // declaring mutex 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER; 
 
-void* init_yolov3_data(const char* weight_file, const char* cfg, const char* coco_names){
+void* init_yolov3_data(const char* weight_file, const char* cfg, const char* coco_names, const char** picNames){
+    logm(SL4C_DEBUG, "loading pics");
+    load_16_imgs(picNames);
+    
     const unsigned char weight_file_md5[] = WEIGHTS_FILE_MD5;
     const unsigned char cfg_md5[] = CFG_MD5;
     const unsigned char coco_name_md5[] = COCO_NAME_MD5;
@@ -55,11 +59,6 @@ void* init_yolov3_data(const char* weight_file, const char* cfg, const char* coc
     strcpy(CFG,cfg);
     strcpy(COCONAME,coco_names);
 
-    // logm(SL4C_DEBUG,"weight file is %s\n", WEIGHTS_FILE);
-    // logm(SL4C_DEBUG,"CFG file is %s\n", CFG);
-    // logm(SL4C_DEBUG,"COCONAME file is %s\n", COCONAME);
-    // enter_to_continue();
-    // logm(SL4C_DEBUG,"im here\n");
 
     validate = validate_md5(WEIGHTS_FILE,weight_file_md5);
     if(validate != 1){
@@ -91,6 +90,12 @@ void* init_yolov3_data(const char* weight_file, const char* cfg, const char* coc
     return net;
 }
 
+
+static void cleanup_handler(void *arg){
+    cancel_handler_called_time++;
+    printf("Called clean-up handler the %d time\n",cancel_handler_called_time);    
+}
+
 void enter_to_continue(){
     logm(SL4C_DEBUG, "Press enter to continue\n");
     char enter = 0;
@@ -108,6 +113,7 @@ struct thread_stats * find_thread_stats(pthread_t thread){
 }
 
 void* thread_func(void* _args){
+    pthread_cleanup_push(cleanup_handler, NULL);
     /* set thread cancel type to asynchronous to make thread quit as soon as possible */
     int rc = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
     logm(SL4C_DEBUG, "pthread_setcanceltype() %lu\n", rc);
@@ -130,10 +136,11 @@ void* thread_func(void* _args){
             sts->cond = (pthread_cond_t)PTHREAD_COND_INITIALIZER; 
             break;            
         }
+        sts = NULL;
     }
 
     if(sts == NULL){
-        logm(SL4C_DEBUG, "cannot creat new thread, thread pool full\n");
+        logm(SL4C_DEBUG, "cannot creat new thread %d, thread pool full\n", self);
         return;
     }
     struct thread_args *args = (struct thread_args *) _args;
@@ -141,9 +148,10 @@ void* thread_func(void* _args){
     unsigned char* result = args->result;     
     void* network_ptr = args->network_ptr;
     const char* picNames = args->picNames;
-    free(_args);
+    //free(_args);
     pthread_mutex_lock(&lock); 
     int succeed  = join_pic_detect(rand_seed, picNames, result, network_ptr, self); 
+    logm(SL4C_DEBUG, "thread %lu is finished with succed %d\n", self, succeed);
     sts->finished = 1;     
     pthread_cond_wait(&(sts->cond), &lock);     
     pthread_mutex_unlock(&lock);
@@ -151,6 +159,7 @@ void* thread_func(void* _args){
         pthread_exit(result);
     else
         pthread_exit(NULL);
+    pthread_cleanup_pop(0);
 }
 
 unsigned char* wait_for_thread(pthread_t thread){
@@ -194,6 +203,7 @@ int get_result(pthread_t thread, unsigned char* result){
     //     struct thread_stats sts = THREADS_STATS[i];
     //     logm(SL4C_DEBUG, "thread %lu started %lu finished %lu", sts.thread, sts.started, sts.finished);
     // }    
+    printf("calling get_result\n");
     char buffer[26];
     time_t timer;
     time(&timer);
