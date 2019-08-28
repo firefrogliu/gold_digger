@@ -9,6 +9,7 @@
 #include <iostream>
 #include <chrono>
 #include "CImg.h"
+#include "sclog4c/sclog4c.h"
 
 using namespace cimg_library;
 CImg<unsigned char> imgs[16];
@@ -33,10 +34,12 @@ std::vector<std::tuple<int,int,int,int>> cal_anker_points(int img_size_x, int im
             std::vector<int> rand_list = gen_rand_list(divide_y,10);
             int sum = 0;
             for(int r : rand_list){               
-                sum += r;
+                //logm(SL4C_DEBUG, "r is %d\n", r);
+                sum += r + 1; //plus 1 for avoiding divide zero
             }
             std::vector<int> anker_y_list;
             int sum_so_far = 0;
+            //logm(SL4C_DEBUG, "sum is %d", sum);
             for(int r: rand_list){                
                 int anker_y = int(sum_so_far * img_size_y/sum);
                 int tile_size_y = r * img_size_y/sum;
@@ -54,7 +57,7 @@ std::vector<std::tuple<int,int,int,int>> cal_anker_points(int img_size_x, int im
             std::vector<int> rand_list = gen_rand_list(divide_x,10);
             int sum = 0;
             for(int r : rand_list){
-                sum += r;
+                sum += r + 1; //plus 1 for avoiding divide zero;
             }
             std::vector<int> anker_x_list;
             int sum_so_far = 0;
@@ -197,23 +200,19 @@ int load_16_imgs(const char** picNames){
 int join_16_pics(int rand_seed, const char** picNames,int join_pic_sizex, int join_pic_sizey, const char* join_pic_name){
     srand(rand_seed);
     try{
+        logm(SL4C_DEBUG,"begin join join 16 pic for %s\n", join_pic_name);
         auto begin = std::chrono::high_resolution_clock::now();
         CImg<unsigned char> dest(join_pic_sizex,join_pic_sizey,3,3);
+        logm(SL4C_DEBUG,"cal ankers pic for %s\n", join_pic_name);
         std::vector<std::tuple<int,int,int,int>> anker_points = cal_anker_points(join_pic_sizex,join_pic_sizey,4,4);
         int pic_id = 0;
         char buff[256];    
         const char* path = PICS_PATH;
+        logm(SL4C_DEBUG,"fill image with images for %s\n", join_pic_name);
         for(auto anker_point:anker_points){
-            // char* absFilename = buff;
-            // strcpy(absFilename,path);  
-            // const char* picName_chars = picNames[pic_id];
-            // strcat(absFilename,picName_chars); 
-            // //printf("pic name is %s\n", absFilename);
-            // CImg<unsigned char> source; 
-            // source.load_jpeg(absFilename);
-            //source.display("emmm");
+
             CImg<unsigned char> *source = &imgs[rand()%16];
-            //source->display("loading pic %d");
+    
             int 
                 anker_x = std::get<0>(anker_point),
                 anker_y = std::get<1>(anker_point),
@@ -227,12 +226,14 @@ int join_16_pics(int rand_seed, const char** picNames,int join_pic_sizex, int jo
             fill_image_with_image(dest,crop,anker_x,anker_y);
             pic_id++;
         }
+        logm(SL4C_DEBUG,"saving pic for %s\n", join_pic_name);
         dest.save(join_pic_name);
         //dest.display("result");
-        auto end = std::chrono::high_resolution_clock::now();
-        auto dur = end - begin;
-        auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();    
-        std::cout << "finished joining pic in "<<ms <<" ms"<< std::endl; 
+        // auto end = std::chrono::high_resolution_clock::now();
+        // auto dur = end - begin;
+        // auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();    
+        // std::cout << "finished joining pic in "<<ms <<" ms"<< std::endl; 
+        logm(SL4C_DEBUG, "returning join pic function for %s\n", join_pic_name);
         return 1;
     }
     catch(...){

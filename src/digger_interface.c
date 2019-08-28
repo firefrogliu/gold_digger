@@ -8,6 +8,30 @@
 #include <time.h>
 #include <string.h>
 
+#ifdef WIN32
+#include <windows.h>
+#elif _POSIX_C_SOURCE >= 199309L
+#include <time.h>   // for nanosleep
+#else
+#include <unistd.h> // for usleep
+#endif
+
+
+void sleep_ms_local(int milliseconds) // cross-platform sleep function
+{
+#ifdef WIN32
+    Sleep(milliseconds);
+#elif _POSIX_C_SOURCE >= 199309L
+    struct timespec ts;
+    ts.tv_sec = milliseconds / 1000;
+    ts.tv_nsec = (milliseconds % 1000) * 1000000;
+    nanosleep(&ts, NULL);
+#else
+    usleep(milliseconds * 1000);
+#endif
+}
+
+
 #define MAX_THREAD_NUM 10
 
 #define WEIGHTS_FILE_MD5 {0xc8, 0x4e, 0x5b, 0x99, 0xd0, 0xe5, 0x2c, 0xd4, 0x66, 0xae, 0x71, 0x0c, 0xad, 0xf6, 0xd8, 0x4c}
@@ -22,6 +46,7 @@ struct thread_args {
     unsigned char* result;
     const char** picNames;
     void* network_ptr;
+    int thread_count
 };
 
 
@@ -31,6 +56,7 @@ struct thread_stats{
     int finished;
     int read;
     int canceled;
+    int thread_count;
     pthread_cond_t cond;     
 };
 
@@ -104,8 +130,10 @@ void enter_to_continue(){
 }
 
 struct thread_stats * find_thread_stats(pthread_t thread){
+    logm(SL4C_DEBUG,"have threads\n");
     for(int i = 0; i < MAX_THREAD_NUM; i++){
         struct thread_stats* sts = &THREADS_STATS[i];
+        logm(SL4C_DEBUG,"thread %lu, thread_count %d\n", sts->thread, sts->thread_count);
         if(sts->thread == thread)
             return sts;
     }
@@ -122,6 +150,7 @@ void* thread_func(void* _args){
     self = pthread_self();
     logm(SL4C_DEBUG, "creating thread %lu\n", self);
 
+    struct thread_args *args = (struct thread_args *) _args;
     /* set thread status */ 
     struct thread_stats* sts = NULL;
     for(int i = 0; i < MAX_THREAD_NUM; i++){
@@ -133,6 +162,7 @@ void* thread_func(void* _args){
             sts->finished = 0;
             sts->read = 0;
             sts->canceled = 0;
+            sts->thread_count = args->thread_count;
             sts->cond = (pthread_cond_t)PTHREAD_COND_INITIALIZER; 
             break;            
         }
@@ -140,16 +170,15 @@ void* thread_func(void* _args){
     }
 
     if(sts == NULL){
-        logm(SL4C_DEBUG, "cannot creat new thread %d, thread pool full\n", self);
+        logm(SL4C_DEBUG, "cannot creat new thread %d, thread pool full\n", args->thread_count);
         return;
     }
-    struct thread_args *args = (struct thread_args *) _args;
+    pthread_mutex_lock(&lock); 
     int rand_seed =  args->rand_seed;            
     unsigned char* result = args->result;     
     void* network_ptr = args->network_ptr;
     const char* picNames = args->picNames;
-    //free(_args);
-    pthread_mutex_lock(&lock); 
+    free(_args);
     int succeed  = join_pic_detect(rand_seed, picNames, result, network_ptr, self); 
     logm(SL4C_DEBUG, "thread %lu is finished with succed %d\n", self, succeed);
     sts->finished = 1;     
@@ -164,35 +193,52 @@ void* thread_func(void* _args){
 
 unsigned char* wait_for_thread(pthread_t thread){
     unsigned char* t_result;    
-    logm(SL4C_DEBUG, "getting %lu thread reasult\n", thread);
-    pthread_join(thread, &t_result);    
-    logm(SL4C_DEBUG, "got %lu thread reasult\n", thread);
+    struct thread_stats* sts = find_thread_stats(thread);
+    if (sts == NULL){
+        logm(SL4C_DEBUG,"getting thread %lu result, but %lu thread does not exits\n", thread);
+        return NULL;
+    }
+    else{        
+        logm(SL4C_DEBUG, "getting thread %d reasult\n", sts->thread_count);
+        pthread_join(thread, &t_result);    
+        logm(SL4C_DEBUG, "got %d thread reasult\n", sts->thread_count);
+    }
     return t_result;
 }
 
-pthread_t creat_thread(int rand_seed, const char** picNames, void* network_ptr){
+pthread_t creat_thread(int rand_seed, const char** picNames, void* network_ptr, int thread_count){
     
     struct thread_args *args = malloc (sizeof (struct thread_args));
     args->rand_seed = rand_seed;
     args->result = malloc(32);
     args->picNames = picNames;
     args->network_ptr = network_ptr;
+    args->thread_count = thread_count;
 
     pthread_t thread;
-    pthread_create(&thread, NULL, thread_func, args);          
-    return thread;    
+    pthread_create(&thread, NULL, thread_func, args);
+    sleep_ms_local(100);
+    struct thread_stats* sts = find_thread_stats(thread);
+    if (sts == NULL){
+        logm(SL4C_DEBUG,"create thread failed %lu\n", thread);
+        return 0;
+    }
+    else{
+        logm(SL4C_DEBUG,"successfully create thread %lu\n", thread);
+        return thread;    
+    }
 }
 
 void cancel_thread(pthread_t thread){
     
     struct thread_stats* sts = find_thread_stats(thread);
     if(sts == NULL){
-        logm(SL4C_DEBUG, "thread does not exist\n");
+        logm(SL4C_DEBUG, "thread %lu does not exist\n", thread);
         return;
     }    
     pthread_cancel(thread);
     sts->canceled = 1;
-    logm(SL4C_DEBUG, "cancelled a thread %lu\n", thread);
+    logm(SL4C_DEBUG, "cancelled a thread %d\n", sts->thread_count);
 
 }
 
@@ -203,7 +249,7 @@ int get_result(pthread_t thread, unsigned char* result){
     //     struct thread_stats sts = THREADS_STATS[i];
     //     logm(SL4C_DEBUG, "thread %lu started %lu finished %lu", sts.thread, sts.started, sts.finished);
     // }    
-    printf("calling get_result\n");
+    logm(SL4C_DEBUG,"calling get_result %lu\n", thread);
     char buffer[26];
     time_t timer;
     time(&timer);
@@ -219,24 +265,24 @@ int get_result(pthread_t thread, unsigned char* result){
         return 0;
     }
     else if (!sts->started){
-        logm(SL4C_DEBUG, "thread %lu not started yet\n", thread);
+        logm(SL4C_DEBUG, "thread %d not started yet\n", sts->thread_count);
         return 0;        
     }
 
     else if(!sts->finished){
-        logm(SL4C_DEBUG, "thread %lu not finished yet\n", thread);
+        logm(SL4C_DEBUG, "thread %d not finished yet\n", sts->thread_count);
         return 0;
     }
     else if(sts->read){
-        logm(SL4C_DEBUG, "thread %lu has been read\n", thread);
+        logm(SL4C_DEBUG, "thread %d has been read\n", sts->thread_count);
         return 0;
     }
     else if (sts->canceled){
-        logm(SL4C_DEBUG, "thread %lu canceled\n", thread);
+        logm(SL4C_DEBUG, "thread %d canceled\n", sts->thread_count);
         return 0;
     }
     else{
-        logm(SL4C_DEBUG, "Signaling thread %lu to wake\n", thread); 
+        logm(SL4C_DEBUG, "Signaling thread %lu to wake\n", sts->thread_count); 
         pthread_cond_signal(&(sts->cond));
         unsigned char* tmp_result = wait_for_thread(thread);
         memcpy(result, tmp_result, 32);

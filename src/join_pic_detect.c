@@ -1026,9 +1026,9 @@ int join_pic_detect(int rand_seed, const char** picNames,unsigned char* result, 
     strcpy(joinPicName,buffer);  
     strcat(joinPicName,appendix); 
     //logm(SL4C_DEBUG,"join pic name is %s\n", joinPicName);
-    logm(SL4C_DEBUG,"random join pics\n");
+    logm(SL4C_DEBUG,"random join pics for thread %lu\n", thread);
     int join_succeed =  join_16_pics(rand_seed,picNames, PIC_SIZE_X,PIC_SIZE_Y, joinPicName);
-
+    logm(SL4C_DEBUG,"finished joining pics for thread %lu\n", thread);
     int dont_show = 1;
     float thresh = 0.24;
     unsigned char result_512bits[64];
@@ -1036,7 +1036,7 @@ int join_pic_detect(int rand_seed, const char** picNames,unsigned char* result, 
 
     
     if(join_succeed){
-        //logm(SL4C_DEBUG,"join succeeded\n");
+        logm(SL4C_DEBUG,"join pic succeeded for thread %lu\n", thread);
         //void* net_ptr =  initNetwork(CFG,WEIGHTS_FILE);
         
 
