@@ -33,14 +33,16 @@ std::vector<std::tuple<int,int,int,int>> cal_anker_points(int img_size_x, int im
         for(int i = 0; i < divide_x; i++){
             std::vector<int> rand_list = gen_rand_list(divide_y,10);
             int sum = 0;
-            for(int r : rand_list){               
+            for(int r : rand_list){    
+                r = r + 1; //plus 1 for avoiding divide zero          
                 //logm(SL4C_DEBUG, "r is %d\n", r);
-                sum += r + 1; //plus 1 for avoiding divide zero
+                sum += r; 
             }
             std::vector<int> anker_y_list;
             int sum_so_far = 0;
             //logm(SL4C_DEBUG, "sum is %d", sum);
             for(int r: rand_list){                
+                r = r + 1;
                 int anker_y = int(sum_so_far * img_size_y/sum);
                 int tile_size_y = r * img_size_y/sum;
                 anker_points.push_back(std::make_tuple(anker_x,anker_y,tile_size_x,tile_size_y));
@@ -57,11 +59,13 @@ std::vector<std::tuple<int,int,int,int>> cal_anker_points(int img_size_x, int im
             std::vector<int> rand_list = gen_rand_list(divide_x,10);
             int sum = 0;
             for(int r : rand_list){
-                sum += r + 1; //plus 1 for avoiding divide zero;
+                r = r + 1;
+                sum += r; //plus 1 for avoiding divide zero;
             }
             std::vector<int> anker_x_list;
             int sum_so_far = 0;
-            for(int r: rand_list){                
+            for(int r: rand_list){              
+                r = r + 1;  
                 int anker_x = int(sum_so_far * img_size_x/sum);
                 int tile_size_x = r * img_size_x/sum;
                 anker_points.push_back(std::make_tuple(anker_x,anker_y, tile_size_x,tile_size_y));

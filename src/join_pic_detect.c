@@ -106,7 +106,7 @@ int compare_by_probs(const void *a_ptr, const void *b_ptr) {
 }
 
 
-void report_detection(image im, detection *dets, int num, float thresh, char **names, int classes, int ext_output, unsigned char* result_512bits){
+void report_detection(image im, detection *dets, int num, float thresh, char **names, int classes, int ext_output, unsigned char* result_512bits, const char* filename){
     int selected_detections_num;
     detection_with_class* selected_detections = get_actual_detections(dets, num, thresh, &selected_detections_num);
 
@@ -115,10 +115,10 @@ void report_detection(image im, detection *dets, int num, float thresh, char **n
     int result_memcpy_ptr = 0; 
     int i;
     memset(result_512bits,0,64);
-    logm(SL4C_DEBUG,"converting the resutls to 512bits data\n");
+    logm(SL4C_DEBUG,"%s converting the resutls to 512bits data\n", filename);
     for (i = 0; i < selected_detections_num && i < 4; ++i) {
         const int best_class = selected_detections[i].best_class;
-        logm(SL4C_DEBUG,"%s: %.0f%%\n", names[best_class], selected_detections[i].det.prob[best_class] * 100);
+        logm(SL4C_DEBUG,"%s, %s: %.0f%%\n", filename, names[best_class], selected_detections[i].det.prob[best_class] * 100);
 
         //set result 512 bits
         if(result_memcpy_ptr + sizeof(names[best_class]) < 64){
@@ -418,7 +418,7 @@ void test_detector_cpu_networkloaded(char **names, char *filename, float thresh,
             if (!input) return;
             strtok(input, "\n");
         }
-        logm(SL4C_DEBUG,"begin loading the picture\n");
+        logm(SL4C_DEBUG,"%s, begin loading the picture\n",filename);
         image im = load_image(input, 0, 0, 3);            // image.c
         image sized = resize_image(im, net.w, net.h);    // image.c
         layer l = net.layers[net.n - 1];
@@ -430,7 +430,7 @@ void test_detector_cpu_networkloaded(char **names, char *filename, float thresh,
         float *X = sized.data;        time = clock();
         //network_predict_quantized(net, X);
         
-        logm(SL4C_DEBUG,"begin running the detection network\n");
+        logm(SL4C_DEBUG,"%s, begin running the detection network\n",filename);
 #ifdef GPU
         if (quantized) {
             network_predict_gpu_cudnn_quantized(net, X);    // quantized
@@ -460,14 +460,14 @@ void test_detector_cpu_networkloaded(char **names, char *filename, float thresh,
         //draw_detections_cpu(im, l.w*l.h*l.n, thresh, boxes, probs, names, alphabet, l.classes);    // draw_detections(): image.c
         float hier_thresh = 0.5;
         int ext_output = 1, letterbox = 0, nboxes = 0;
-        logm(SL4C_DEBUG,"finished running the network, collecting the results\n");
+        logm(SL4C_DEBUG,"%s, finished running the network, collecting the results\n",filename);
         detection *dets = get_network_boxes(&net, im.w, im.h, thresh, hier_thresh, 0, 1, &nboxes, letterbox);
         if (nms) {
             do_nms_sort(dets, nboxes, l.classes, nms);
         }
 
         logm(SL4C_DEBUG,"report the deteciton\n");
-        report_detection(im, dets, nboxes, thresh, names, l.classes, ext_output, result_512bits);
+        report_detection(im, dets, nboxes, thresh, names, l.classes, ext_output, result_512bits, filename);
         //save_image_png(im, "predictions");    // image.c
         if (!dont_show) {
             show_image(im, "predictions");    // image.c
@@ -564,7 +564,7 @@ void test_detector_cpu(char **names, char *cfgfile, char *weightfile, char *file
             do_nms_sort(dets, nboxes, l.classes, nms);
         }
 
-        report_detection(im, dets, nboxes, thresh, names, l.classes, ext_output, result_512bits);
+        report_detection(im, dets, nboxes, thresh, names, l.classes, ext_output, result_512bits,filename);
         //save_image_png(im, "predictions");    // image.c
         if (!dont_show) {
             show_image(im, "predictions");    // image.c
@@ -1022,7 +1022,8 @@ int join_pic_detect(int rand_seed, const char** picNames,unsigned char* result, 
     char joinPicName[256];    
     char buffer[sizeof(unsigned long)*8+1];
     const char* appendix = JOIN_PIC_NAME_APPENDIX;
-    sprintf(buffer, "%lu", thread);  
+    //sprintf(buffer, "%lu", thread);  
+    sprintf(buffer, "%d", rand_seed);  
     strcpy(joinPicName,buffer);  
     strcat(joinPicName,appendix); 
     //logm(SL4C_DEBUG,"join pic name is %s\n", joinPicName);
