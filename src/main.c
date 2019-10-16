@@ -82,26 +82,18 @@ int main(int argc, char **argv){
     // }
     //return 0;
 
-    #define total_threads  1
-    unsigned long threads[total_threads];
+    #define total_threads  1000
+    char buffer[26];
+
+    unsigned long threads[total_threads];    
     int got_results[total_threads];
     
-    // unsigned char** results = malloc(5*32);
-    // for(int i = 0; i < threads_num; i++){
-    //     unsigned long thread = creat_thread(rand_seed+i, picNames,network_ptr);
-    //     threads[i] = thread;
-    //     sleep_ms(500);
-    // }
-    //sleep(2);
-    // unsigned long thread1 = creat_thread(rand_seed, picNames,network_ptr);
-    // printf("im herer\n");
+    struct tm starts[total_threads];
 
-    // unsigned char* result = malloc(32);
-    // //unsigned char* result1 = malloc(32);
 
 
     int tic = 0;
-    
+    int batch_size = 5;
     int thread_count = 0;
     int finished_threads[total_threads];
     int rand_nums[total_threads];
@@ -111,8 +103,8 @@ int main(int argc, char **argv){
         finished_threads[i] = -1;
     FILE *fptr;
     fptr = fopen("thread_results.txt", "w");
-    while(1){
-            
+    
+    for (int i = 0; i < batch_size; i++){
 
         logm(SL4C_DEBUG,"creating a thread %d\n", thread_count);
         long rand_num = rand_seed + thread_count;
@@ -120,70 +112,87 @@ int main(int argc, char **argv){
         if (thread > 0){
             //enter_to_continue();
             logm(SL4C_DEBUG,"succeed created a thread %lu, thread count %d, rand num %d\n", thread, thread_count, rand_num);
-            // fprintf(fptr,"thread %lu,thread count %d\n", thread,thread_count);
-            
+            // fprintf(fptr,"thread %lu,thread count %d\n", thread,thread_count);           
             threads[thread_count] = thread;
             rand_nums[thread_count] = rand_num;
-            
             thread_count++;            
 
         }
-        
+    }
+    
+
+    while(1){     
 
         //enter_to_continue();
 
-        logm(SL4C_DEBUG,"thead_coutn is %d\n", thread_count);
-        while(1){
-            for(int i = 0; i < thread_count; i++){              
+        logm(SL4C_INFO,"thead_count is %d\n", thread_count);
+        logm(SL4C_INFO,"finished thread is %d\n", finished_count);
+        int thread_count_tmp = thread_count;
+        //int thread_count_tmp = 1;
+        int first_thread_finishe = 0;
+        for(int i = 0; i < thread_count_tmp; i++){              
 
-                if(numberInArray(finished_threads,total_threads,i))
-                    continue;
-                logm(SL4C_DEBUG,"im herer with total thread = %d\n", thread_count);
-                // char buffer[26];
-                // time_t timer;
-                // time(&timer);
-                // struct tm* tm_info;
-                // tm_info = localtime(&timer);
-                // strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
-                // puts(buffer);
-                unsigned char* result = malloc(32);
-                logm(SL4C_DEBUG,"getting %lu thread result, tread count %d\n", threads[i], i);                
-                int succeed = get_result(threads[i], result);
-                if(succeed){
-                    printf("succeed!");
-                    logm(SL4C_DEBUG,"thread count %d, rand_num %d result \n", i, rand_nums[i]);  
-                    print_bytes(result, 32, "result in main");
-                    fprintf(fptr,"thread %lu,thread count %d, rand %d, ", threads[i],i,rand_nums[i]);
-                    for(int i = 0; i < 32; i++){
-                        fprintf(fptr,"0x%x, ",*(result+i));
-                    }
-                    fprintf(fptr,"\n");
-                    succeed = 0;
-                    finished_threads[finished_count] = i;
-                    finished_count++;
-                    //enter_to_continue();
+            if(numberInArray(finished_threads,total_threads,i))
+                continue;
+            logm(SL4C_DEBUG,"im here with total thread = %d\n", thread_count);
+            
+
+
+            unsigned char* result = malloc(32);
+            logm(SL4C_DEBUG,"getting %lu thread result, tread count %d\n", threads[i], i);                
+            int succeed = get_result(threads[i], result);
+            if(succeed){
+                printf("succeed!");                
+                logm(SL4C_DEBUG,"thread count %d, rand_num %d result \n", i, rand_nums[i]);  
+                print_bytes(result, 32, "result in main");
                     
-                    //break;
-                }
-                free(result);
+                time_t timer;
+                time(&timer);
+                struct tm* tm_info;
+                tm_info = localtime(&timer);
+                strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);                         
                 
-            }             
-            sleep_ms(200);            
-            logm(SL4C_DEBUG,"tick is %d\n", tic);  
-            tic++;
-            //enter_to_continue();
+                fprintf(fptr,"%s, thread %lu,thread count %d, rand %d,",buffer,threads[i],i,rand_nums[i]);
+                for(int i = 0; i < 32; i++){
+                    fprintf(fptr,"0x%x, ",*(result+i));
+                }
+                fprintf(fptr,"\n");
+                //first_thread_finishe = 1;
+                //break;
+                succeed = 0;
+                finished_threads[finished_count] = i;
+                finished_count++;
+                
+                //create a count when a thread is finished
+                logm(SL4C_INFO,"creating a thread %d\n", thread_count);
+                long rand_num = rand_seed + thread_count;
+                unsigned long thread = creat_thread(rand_num, picNames,network_ptr,thread_count);
+                if (thread > 0){
+                    //enter_to_continue();
+                    logm(SL4C_INFO,"succeed created a thread %lu, thread count %d, rand num %d\n", thread, thread_count, rand_num);                    
+                    threads[thread_count] = thread;
+                    rand_nums[thread_count] = rand_num;                    
+                    thread_count++;            
 
-            if(finished_count == thread_count)
-                break;
-        }
+                }
+            }
+            free(result);
+            
+        }             
+        sleep_ms(100);            
+        logm(SL4C_INFO,"tick is %d\n", tic);  
+        tic++;
+        //enter_to_continue();
 
-        if(thread_count == total_threads)
+        //if (first_thread_finishe)
+        //    break;
+
+        if(finished_count >= total_threads)
             break;
+
     }
     fclose(fptr);
-    //logm(SL4C_DEBUG,"cant wait any more, abort!\n");
-    //cancel_thread(thread);
-    //wait_for_thread(thread);
+
     
     return 0;    
 }
